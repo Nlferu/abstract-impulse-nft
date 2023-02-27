@@ -20,6 +20,7 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     }
 
     // In order to create new NFT we can use below:
+    // mint() or _safeMint() to be considered
     function mintNFT(string memory tokenURI, string memory nftTitle) public onlyOwner returns (uint256) {
         uint256 newTokenId = s_tokenId.current();
         // This is to be tested compared to "s_tokenId += 1"
