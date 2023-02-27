@@ -1,31 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.8;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-contract AbstractImpulseNft is ERC721, Ownable {
-    uint256 private s_tokenCounter;
-    string public constant TOKEN_URI = "ipfs://bafybeig37ioir76s7mg5oobetncojcm3c3hxasyd4rvid4jqhy4gkaheg4/?filename=0-PUG.json";
+contract AbstractImpulseNft is ERC721URIStorage, Ownable {
+    // NFT Variables
+    uint256 private s_tokenId;
+
+    // NFT Events
+    event NftMinted(address minter, string title);
 
     constructor() ERC721("Abstract Impulse", "AIN") {
-        s_tokenCounter = 0;
+        s_tokenId = 0;
     }
 
-    // In order to create new "DOG's" we can use below:
-    function mintNft() public returns (uint256) {
-        // Function from ERC721
-        _safeMint(msg.sender, s_tokenCounter);
-        s_tokenCounter += 1;
-        return s_tokenCounter;
-    }
+    // In order to create new NFT we can use below:
+    function mintNFT(string memory tokenURI, string memory nftTitle) public onlyOwner returns (uint256) {
+        uint256 newTokenId = s_tokenId;
+        s_tokenId += 1;
 
-    function tokenURI(uint256 /* tokenId */) public pure override returns (string memory) {
-        return TOKEN_URI;
+        _safeMint(msg.sender, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+
+        emit NftMinted(msg.sender, nftTitle);
+        return newTokenId;
     }
 
     function getTokenCounter() public view returns (uint256) {
-        return s_tokenCounter;
+        return s_tokenId;
     }
 }
