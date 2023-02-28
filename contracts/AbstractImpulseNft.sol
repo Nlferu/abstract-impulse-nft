@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 error Abstract__NotEnoughtETH();
 error Abstract__NotExistingTokenId();
+error Abstract__TransferFailed();
 
 contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     // NFT Variables
@@ -49,7 +50,20 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
                 console.log("First Bid Of", tokenId, "NFT");
             } else {
                 require(msg.value > s_tokenIdToBids[tokenId], "Didn't send enough ETH!");
+
+                /**
+                 * @dev Check, which method is better/cheaper.
+                 */
+                // ------------------------------------------------------- Method 1 --------------------------------------------------------
+                // (bool success, ) = s_tokenIdToBidder[tokenId].call{value: s_tokenIdToBids[tokenId]}("New Highest Bid Received!");
+                // // require(success, "Transfer failed");
+                // if (!success) {
+                //     revert Abstract__TransferFailed();
+                // }
+                // ------------------------------------------------------- Method 2 --------------------------------------------------------
                 s_tokenIdToBidder[tokenId].transfer(s_tokenIdToBids[tokenId]);
+
+                console.log("Previous Bid Of:", s_tokenIdToBids[tokenId], "Returned To It's Owner!");
                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                 s_tokenIdToBids[tokenId] = msg.value;
             }
@@ -83,5 +97,9 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
 
     function getBidd(uint256 tokenId) public view returns (uint256) {
         return s_tokenIdToBids[tokenId];
+    }
+
+    function getBidderBalance(address bidderId) public view returns (uint256) {
+        return bidderId.balance;
     }
 }
