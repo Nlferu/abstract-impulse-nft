@@ -6,11 +6,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "hardhat/console.sol";
 
-error Abstract__NotEnoughtETH();
+error Abstract__NotEnoughETH();
 error Abstract__NotExistingTokenId();
+error Abstract__BiddingClosedForThisNFT();
+error Abstract__BiddingNotFinishedYetForThisNFT();
 error Abstract__TransferFailed();
 
 contract AbstractImpulseNft is ERC721URIStorage, Ownable {
+    // Type Declaration
+    enum BiddingState {
+        OPEN,
+        CLOSED
+    }
+
     // NFT Variables
     using Counters for Counters.Counter;
     Counters.Counter private s_tokenId;
@@ -18,6 +26,7 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     // NFT Mappings
     mapping(uint256 => address payable) private s_tokenIdToBidder;
     mapping(uint256 => uint256) private s_tokenIdToBids;
+    mapping(uint256 => BiddingState) private s_tokenIdToBiddingState;
 
     // NFT Events
     event NftMinted(address minter, string title);
@@ -33,6 +42,8 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
         uint256 newTokenId = s_tokenId.current();
         // This is to be tested compared to "s_tokenId += 1"
         s_tokenId.increment();
+        // Changing State For New NFT is not necessary as it is set to OPEN as default...
+        // s_tokenIdToBiddingState[newTokenId] = BiddingState.OPEN;
 
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, tokenURI);
@@ -44,18 +55,41 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     function placeBid(uint256 tokenId) public payable {
         if (s_tokenId.current() > tokenId) {
             if (s_tokenIdToBidder[tokenId] == address(0)) {
-                require(msg.value > 0, "Didn't send enough ETH!");
+                /**
+                 * @dev Check, which conditions method is better/cheaper.
+                 */
+                // ------------------------------------------------------- Method 1 --------------------------------------------------------
+                if (msg.value <= 0) {
+                    revert Abstract__NotEnoughETH();
+                }
+                // ------------------------------------------------------- Method 2 --------------------------------------------------------
+                //require(msg.value > 0, "Didn't send enough ETH!");
+
+                // State Checking...
+                if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
+                    revert Abstract__BiddingClosedForThisNFT();
+                }
+
                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                 s_tokenIdToBids[tokenId] = msg.value;
-                console.log("First Bid Of", tokenId, "NFT");
+                console.log("First Bid Value Of:", msg.value, "For 0 NFT Received!");
             } else {
+                /**
+                 * @dev Implement better solution from above once tested!
+                 */
                 require(msg.value > s_tokenIdToBids[tokenId], "Didn't send enough ETH!");
 
+                // State Checking...
+                if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
+                    revert Abstract__BiddingClosedForThisNFT();
+                }
+
                 /**
-                 * @dev Check, which method is better/cheaper.
+                 * @dev Check, which transfer method is better/cheaper.
                  */
                 // ------------------------------------------------------- Method 1 --------------------------------------------------------
                 // (bool success, ) = s_tokenIdToBidder[tokenId].call{value: s_tokenIdToBids[tokenId]}("New Highest Bid Received!");
+                // console.log("New Highest Bid Of:", msg.value, "Received!");
                 // // require(success, "Transfer failed");
                 // if (!success) {
                 //     revert Abstract__TransferFailed();
@@ -72,8 +106,20 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
         }
     }
 
-    function withdraw() private onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+    function tokenStateChanger(uint256 tokenId) public onlyOwner {
+        if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
+            revert Abstract__BiddingClosedForThisNFT();
+        }
+
+        s_tokenIdToBiddingState[tokenId] = BiddingState.CLOSED;
+        console.log("Auction State For", tokenId, "Changed!");
+    }
+
+    function withdraw(uint256 tokenId) public onlyOwner {
+        if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
+            revert Abstract__BiddingNotFinishedYetForThisNFT();
+        }
+        payable(msg.sender).transfer(s_tokenIdToBids[tokenId]);
     }
 
     /*
@@ -85,6 +131,10 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
 
     function getTokenCounter() public view returns (Counters.Counter memory) {
         return s_tokenId;
+    }
+
+    function getBiddingState(uint256 tokenId) public view returns (BiddingState) {
+        return s_tokenIdToBiddingState[tokenId];
     }
 
     function getLogic(uint256 tokenId) public view returns (bool) {
