@@ -106,15 +106,34 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
         }
     }
 
-    function tokenStateChanger(uint256 tokenId) public onlyOwner {
+    /**
+     * @dev This will occur once timer end, so js script has to trigger it, but there is onlyOwner approval needed
+     */
+    function tokenBiddingEnder(uint256 tokenId) public onlyOwner {
         if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
             revert Abstract__BiddingClosedForThisNFT();
         }
-
         s_tokenIdToBiddingState[tokenId] = BiddingState.CLOSED;
-        console.log("Auction State For", tokenId, "Changed!");
+        console.log("Auction Finished! For", tokenId);
+        console.log("Transferring Token To New Owner...");
+        tokenTransfer(tokenId);
+        console.log("Paying Artist...");
+        withdraw(tokenId);
     }
 
+    /**
+     * @dev This will transfer NFT after it's bidding ends
+     */
+    function tokenTransfer(uint256 tokenId) public onlyOwner {
+        if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
+            revert Abstract__BiddingNotFinishedYetForThisNFT();
+        }
+        safeTransferFrom(msg.sender, getBidder(tokenId), tokenId);
+    }
+
+    /**
+     * @dev We will be able to withdraw money from contract only for closed biddings
+     */
     function withdraw(uint256 tokenId) public onlyOwner {
         if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
             revert Abstract__BiddingNotFinishedYetForThisNFT();
