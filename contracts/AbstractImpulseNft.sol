@@ -14,6 +14,7 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private s_tokenId;
 
+    // NFT Mappings
     mapping(uint256 => address payable) private s_tokenIdToBidder;
     mapping(uint256 => uint256) private s_tokenIdToBids;
 
@@ -57,8 +58,8 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
         }
     }
 
-    function returnBid(uint256 tokenId) private onlyOwner {
-        s_tokenIdToBidder[tokenId].transfer(address(this).balance);
+    function withdraw() private onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     /*
@@ -72,15 +73,15 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
         return s_tokenId;
     }
 
-    function getBidderLen(uint256 tokenId) public view returns (bool) {
+    function getLogic(uint256 tokenId) public view returns (bool) {
         return s_tokenIdToBidder[tokenId] == address(0);
     }
 
-    function getBidders(uint256 tokenId) public view returns (address) {
+    function getBidder(uint256 tokenId) public view returns (address) {
         return s_tokenIdToBidder[tokenId];
     }
 
-    function getBidds(uint256 tokenId) public view returns (uint256) {
+    function getBidd(uint256 tokenId) public view returns (uint256) {
         return s_tokenIdToBids[tokenId];
     }
 }
