@@ -16,6 +16,7 @@ const networkConfig = {
         mintFee: "10000000000000000", // 0.01 ETH
         subscriptionId: "0", // add your ID here!
     },
+    // Sepolia 137
 }
 
 const BASE_FEE = ethers.utils.parseEther("0.25") // 0.25 is PREMIUM. It costs 0.25 LINK per request.
