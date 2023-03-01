@@ -8,17 +8,17 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("----------------------------------------------------")
     arguments = []
-    const basicNft = await deploy("BasicNft", {
+    const abstractImpulseNFT = await deploy("AbstractImpulseNft", {
         from: deployer,
         args: arguments,
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1,
     })
 
-    // Verify the deployment
+    // Verify Contract
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         log("Verifying...")
-        await verify(basicNft.address, arguments)
+        await verify(abstractImpulseNFT.address, arguments)
     }
 }
 
