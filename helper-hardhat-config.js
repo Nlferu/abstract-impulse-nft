@@ -19,9 +19,6 @@ const INITIAL_PRICE = "200000000000000000000"
 module.exports = {
     networkConfig,
     developmentChains,
-    BASE_FEE,
-    GAS_PRICE_LINK,
     DECIMALS,
     INITIAL_PRICE,
-    FUND_AMOUNT,
 }

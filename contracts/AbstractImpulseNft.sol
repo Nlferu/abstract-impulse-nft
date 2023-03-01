@@ -12,7 +12,7 @@ error Abstract__BiddingClosedForThisNFT();
 error Abstract__BiddingNotFinishedYetForThisNFT();
 error Abstract__TransferFailed();
 
-contract AbstractImpulseNft is ERC721URIStorage, Ownable {
+contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     // Type Declaration
     enum BiddingState {
         OPEN,
@@ -31,10 +31,7 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
     // NFT Events
     event NftMinted(address minter, string title);
 
-    constructor() ERC721("Abstract Impulse", "AIN") {
-        // This might be not necessary if using Counters library
-        //s_tokenId = 0;
-    }
+    constructor() ERC721("Abstract Impulse", "AIN") {}
 
     // In order to create new NFT we can use below:
     // mint() or _safeMint() to be considered
@@ -105,6 +102,9 @@ contract AbstractImpulseNft is ERC721URIStorage, Ownable {
             revert Abstract__NotExistingTokenId();
         }
     }
+
+    // Function for owner to end bidding and transfer NFT immediately
+    function acceptBid() public onlyOwner {}
 
     /**
      * @dev This will occur once timer end, so js script has to trigger it, but there is onlyOwner approval needed
