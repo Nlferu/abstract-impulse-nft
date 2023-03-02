@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "hardhat/console.sol";
 
 error Abstract__NotEnoughETH();
+error Abstract__TransferFailed();
 error Abstract__NotExistingTokenId();
 error Abstract__BiddingClosedForThisNFT();
+error Abstract__ContractOwnerIsNotAllowedToBid();
 error Abstract__BiddingNotFinishedYetForThisNFT();
-error Abstract__TransferFailed();
 
 contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     // Type Declaration
@@ -50,6 +51,9 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     }
 
     function placeBid(uint256 tokenId) public payable {
+        if (msg.sender == owner()) {
+            revert Abstract__ContractOwnerIsNotAllowedToBid();
+        }
         if (s_tokenId.current() > tokenId) {
             if (s_tokenIdToBidder[tokenId] == address(0)) {
                 /**
