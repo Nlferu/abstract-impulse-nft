@@ -30,7 +30,9 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     mapping(uint256 => BiddingState) private s_tokenIdToBiddingState;
 
     // NFT Events
-    event NftMinted(address minter, string title);
+    event NFTMinted(address minter, string title);
+    event FirstNFTBidPlaced(uint256 amount);
+    event NFTBidPlaced(uint256 amount);
 
     constructor() ERC721("Abstract Impulse", "AIN") {}
 
@@ -46,7 +48,7 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, tokenURI);
 
-        emit NftMinted(msg.sender, nftTitle);
+        emit NFTMinted(msg.sender, nftTitle);
         return newTokenId;
     }
 
@@ -74,6 +76,7 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                 s_tokenIdToBids[tokenId] = msg.value;
                 console.log("First Bid Value Of:", msg.value, "For 0 NFT Received!");
+                emit FirstNFTBidPlaced(msg.value);
             } else {
                 /**
                  * @dev Implement better solution from above once tested!
@@ -101,6 +104,7 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
                 console.log("Previous Bid Of:", s_tokenIdToBids[tokenId], "Returned To It's Owner!");
                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                 s_tokenIdToBids[tokenId] = msg.value;
+                emit NFTBidPlaced(msg.value);
             }
         } else {
             revert Abstract__NotExistingTokenId();
