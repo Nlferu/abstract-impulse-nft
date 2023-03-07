@@ -46,6 +46,7 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
         // s_tokenIdToBiddingState[newTokenId] = BiddingState.OPEN;
 
         _mint(msg.sender, newTokenId);
+        // Below is just assigning "tokenId" to correct "tokenURI"
         _setTokenURI(newTokenId, tokenURI);
 
         emit NFTMinted(msg.sender, nftTitle);
@@ -158,6 +159,10 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
 
     function getTokenCounter() public view returns (Counters.Counter memory) {
         return s_tokenId;
+    }
+
+    function getTokenIdToTokenURI(uint256 tokenId) public view returns (string memory) {
+        return this.tokenURI(tokenId);
     }
 
     function getBiddingState(uint256 tokenId) public view returns (BiddingState) {
