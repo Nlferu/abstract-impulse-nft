@@ -4,7 +4,7 @@ const metadataTemplate = {
     author: "",
     description: "",
     image: "",
-    date: new Date(),
+    //date: new Date(),
 }
 
 module.exports = { metadataTemplate }

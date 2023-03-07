@@ -13,6 +13,10 @@ error Abstract__BiddingClosedForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 error Abstract__BiddingNotFinishedYetForThisNFT();
 
+/**
+*@dev
+    Add "ReentrancyGuard" to protect
+*/
 contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     // Type Declaration
     enum BiddingState {
