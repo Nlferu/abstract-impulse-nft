@@ -3,18 +3,27 @@
 const fs = require("fs")
 const { metadataTemplate } = require("../utils/metadataTemplate")
 const { storeImages, storeTokenUriMetadata } = require("../utils/uploadToPinata")
-const { uploadedURIs } = require("../helper-hardhat-config")
+const { uploadedImagesURIs, uploadedMetadataURIs } = require("../helper-hardhat-config")
 
 const imagesLocation = "./images/"
 
 async function handleTokenUris() {
     tokenUris = []
+    storeUris = []
     // Uploading Images To Pinata
     const { responses: imageUploadResponses, files } = await storeImages(imagesLocation)
     // Saving Uploaded Images URIs In "utils" folder under "uploadedURIs" file
-    fs.writeFileSync(uploadedURIs, imageUploadResponses.toString())
-    fs.writeFileSync(uploadedURIs, files.toString())
-    console.log(imageUploadResponses.toString(), files.toString())
+    for (imageUploadResponseIndex in imageUploadResponses) {
+        if (imageUploadResponseIndex == 0) {
+            console.log("Saving Images URIs To File...")
+        }
+
+        storeUris.push(`https://gateway.pinata.cloud/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash.toString()}` + "\n")
+        fs.writeFileSync(uploadedImagesURIs, storeUris.toString().replace(",", ""))
+    }
+
+    // Clearing Array...
+    storeUris = []
 
     for (imageUploadResponseIndex in imageUploadResponses) {
         // Create metadata
@@ -25,16 +34,20 @@ async function handleTokenUris() {
         // Editing Metadata
         tokenUriMetadata.name = files[imageUploadResponseIndex].replace(".jpg", "")
         tokenUriMetadata.description = `Unique ${tokenUriMetadata.name} art`
-        tokenUriMetadata.image = `ipfs://${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`
+        tokenUriMetadata.image = `https://gateway.pinata.cloud/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`
         console.log(`Uploading ${tokenUriMetadata.name} metadata...`)
 
         // Store the JSON to pinata/IPFS
         // Uploading MetaData To Pinata
         const metadataUploadResponse = await storeTokenUriMetadata(tokenUriMetadata)
-        tokenUris.push(`ipfs://${metadataUploadResponse.IpfsHash}`)
+        tokenUris.push(`https://gateway.pinata.cloud/ipfs/${metadataUploadResponse.IpfsHash}`)
 
         // Saving Uploaded Metadata URIs In "utils" folder under "uploadedURIs" file
-        fs.writeFileSync(uploadedURIs, tokenUris.toString())
+        if (imageUploadResponseIndex == imageUploadResponseIndex.length) {
+            console.log("Saving Metadata URIs To File...")
+        }
+        storeUris.push(`https://gateway.pinata.cloud/ipfs/${metadataUploadResponse.IpfsHash.toString()}` + "\n")
+        fs.writeFileSync(uploadedMetadataURIs, storeUris.toString().replace(",", ""))
     }
     console.log("Token URIs uploaded! They are:")
     console.log(tokenUris)

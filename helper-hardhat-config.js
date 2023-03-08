@@ -16,14 +16,14 @@ const developmentChains = ["hardhat", "localhost"]
 const DECIMALS = "18"
 const INITIAL_PRICE = "200000000000000000000"
 
-const uploadedURIs = "../Abstract_Impulse_NFT/utils/uploadedURIs.txt"
-const uploadedImagesURIs = "../VRFConsumerV2_Raffle_FrontEnd/constants/contractAddresses.json"
-const uploadedMetadataURIs = "../VRFConsumerV2_Raffle_FrontEnd/constants/contractAbi.json"
+const uploadedImagesURIs = "../Abstract_Impulse_NFT/utils/uploadedURIs/uploadedImagesURIs.txt"
+const uploadedMetadataURIs = "../Abstract_Impulse_NFT/utils/uploadedURIs/uploadedMetadataURIs.txt"
 
 module.exports = {
     networkConfig,
     developmentChains,
     DECIMALS,
     INITIAL_PRICE,
-    uploadedURIs,
+    uploadedImagesURIs,
+    uploadedMetadataURIs,
 }

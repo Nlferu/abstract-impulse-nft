@@ -42,6 +42,7 @@ module.exports = {
     etherscan: {
         apiKey: ETHERSCAN_API_KEY,
     },
+    // To Get Gas-Report Just Run Test
     gasReporter: {
         enabled: false,
         currency: "USD",
