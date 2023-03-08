@@ -114,9 +114,9 @@ const { developmentChains } = require("../../helper-hardhat-config")
                   const contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
 
                   assert.equal(our_val.toString(), contractBalance)
-                  await expect(abstractInstanceExternal.placeBid(0, { value: ethers.utils.parseEther("0.15") })).to.be.revertedWith("Didn't send enough ETH!")
+                  await expect(abstractInstanceExternal.placeBid(0, { value: ethers.utils.parseEther("0.15") })).to.be.revertedWith("Abstract__NotEnoughETH")
               })
-              it("For first and rest NFT bids emits event and return previous bid to owner", async () => {
+              it("For first and rest NFT bidding emits event and return previous bid to owner", async () => {
                   const userBal = await ethers.provider.getBalance(user.address)
                   const txResponse = await abstractInstanceExternal.placeBid(0, { value: ethers.utils.parseEther("0.15") })
                   const txReceipt = await txResponse.wait()
