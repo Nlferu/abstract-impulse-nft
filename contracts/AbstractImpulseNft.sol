@@ -15,7 +15,7 @@ error Abstract__BiddingNotFinishedYetForThisNFT();
 /**
  *@dev
  * Add "ReentrancyGuard" to protect.
- * Also ERC721 is cheaper -> we have to consider, which one we should use.
+ * Also ERC721 is cheaper -> but it doesn't have _setTokenURI function 3k Gas diff only
  */
 contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     // Type Declaration
