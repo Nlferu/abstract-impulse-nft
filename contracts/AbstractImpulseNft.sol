@@ -49,6 +49,8 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
 
         _mint(msg.sender, newTokenId);
         // Below is just assigning "tokenId" to correct "tokenURI"
+        // We use below because of additional customization, but it is not most gas efficient
+        // Is it even necessary?
         _setTokenURI(newTokenId, tokenURI);
 
         emit NFTMinted(msg.sender, nftTitle);
