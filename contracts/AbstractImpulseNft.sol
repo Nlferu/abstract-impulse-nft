@@ -16,6 +16,7 @@ error Abstract__BiddingNotFinishedYetForThisNFT();
  *@dev
  * Add "ReentrancyGuard" to protect.
  * Also ERC721 is cheaper -> but it doesn't have _setTokenURI function 3k Gas diff only
+ * Switch to ERC721A and check SOLMATE as ERC721 is old nowadays
  */
 contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
     // Type Declaration
