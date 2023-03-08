@@ -63,7 +63,7 @@ contract AbstractImpulseNFT is ERC721URIStorage, Ownable {
         }
         if (s_tokenId.current() > tokenId) {
             if (s_tokenIdToBidder[tokenId] == address(0)) {
-                if (msg.value <= 0) {
+                if (msg.value == 0) {
                     revert Abstract__NotEnoughETH();
                 }
 
