@@ -104,9 +104,10 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         return s_tokenURIs[tokenId];
     }
 
-    function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
-        super.approve(to, tokenId);
-    }
+    // This can be removed as approved address wont be able to transfer token if bidding not finished
+    // function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+    //     super.approve(to, tokenId);
+    // }
 
     function safeTransferFrom(address from, address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
         super.safeTransferFrom(from, to, tokenId);
