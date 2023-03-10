@@ -15,6 +15,7 @@ error Abstract__BiddingNotFinishedYetForThisNFT();
 /**
  *@dev
  * Add "ReentrancyGuard" to protect.
+ * Functions with transfer back ETH should be nonReentrant
  * Check SOLMATE !!!
  */
 contract AbstractImpulseNFT is ERC721A, Ownable {
