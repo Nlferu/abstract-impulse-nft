@@ -116,6 +116,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         super.safeTransferFrom(from, to, tokenId, _data);
     }
 
+    // Function setApprovalForAll() function takes new "approved address" and second argument if true: it will give approval for all tokenId's to that address
+    // if we then call false as owner approval will be revoken to all tokenId's for that address
+
     /**
      * @dev This will occur once timer end or if owner decide to accept bid, so js script has to trigger it, but there is onlyOwner approval needed
      * Or we can just simply post info on website when certain auction will finish and end it manually
