@@ -3,14 +3,16 @@ pragma solidity 0.8.8;
 
 import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error Abstract__NotEnoughETH();
 error Abstract__TransferFailed();
 error Abstract__TotalSupplyReached();
 error Abstract__NotExistingTokenId();
 error Abstract__BiddingClosedForThisNFT();
+error Abstract__NoBidDetectedForThisToken();
+error Abstract__BiddingStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
-error Abstract__BiddingNotFinishedYetForThisNFT();
 
 /**
  *@dev
@@ -18,7 +20,7 @@ error Abstract__BiddingNotFinishedYetForThisNFT();
  * Functions with transfer back ETH should be nonReentrant
  * Check SOLMATE !!!
  */
-contract AbstractImpulseNFT is ERC721A, Ownable {
+contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     // Type Declaration
     enum BiddingState {
         OPEN,
@@ -56,7 +58,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable {
         emit NFTMinted(msg.sender, nftTitle);
     }
 
-    function placeBid(uint256 tokenId) public payable {
+    function placeBid(uint256 tokenId) public payable nonReentrant {
         if (msg.sender == owner()) {
             revert Abstract__ContractOwnerIsNotAllowedToBid();
         }
@@ -66,7 +68,6 @@ contract AbstractImpulseNFT is ERC721A, Ownable {
                     revert Abstract__NotEnoughETH();
                 }
 
-                // State Checking...
                 if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
                     revert Abstract__BiddingClosedForThisNFT();
                 }
@@ -79,7 +80,6 @@ contract AbstractImpulseNFT is ERC721A, Ownable {
                     revert Abstract__NotEnoughETH();
                 }
 
-                // State Checking...
                 if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
                     revert Abstract__BiddingClosedForThisNFT();
                 }
@@ -99,15 +99,35 @@ contract AbstractImpulseNFT is ERC721A, Ownable {
         }
     }
 
+    // Test if it displays images correctly for multiple NFT's
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return s_tokenURIs[tokenId];
     }
 
-    // Function for owner to end bidding and transfer NFT immediately
+    function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+        super.approve(to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public payable override biddingStateCheck(tokenId) {
+        super.safeTransferFrom(from, to, tokenId, _data);
+    }
+
+    /**
+     * @dev This will occur once timer end or if owner decide to accept bid, so js script has to trigger it, but there is onlyOwner approval needed
+     * Or we can just simply post info on website when certain auction will finish and end it manually
+     * If Bidding state is clsoed -> error
+     */
     function acceptBid(uint256 tokenId) public onlyOwner {
+        if (s_tokenIdToBids[tokenId] == 0) {
+            revert Abstract__NoBidDetectedForThisToken();
+        }
         if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
-            s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED;
-            tokenTransfer(tokenId);
+            s_tokenIdToBiddingState[tokenId] = BiddingState.CLOSED;
+            approve(s_tokenIdToBidder[tokenId], tokenId);
             withdraw(tokenId);
         } else {
             revert Abstract__BiddingClosedForThisNFT();
@@ -115,42 +135,21 @@ contract AbstractImpulseNFT is ERC721A, Ownable {
     }
 
     /**
-     * @dev This will occur once timer end, so js script has to trigger it, but there is onlyOwner approval needed
-     * Or we can just simply post info on website when certain auction will finish and end it manually
-     */
-    function tokenBiddingEnder(uint256 tokenId) public onlyOwner {
-        if (s_tokenIdToBiddingState[tokenId] == BiddingState.CLOSED) {
-            revert Abstract__BiddingClosedForThisNFT();
-        }
-        s_tokenIdToBiddingState[tokenId] = BiddingState.CLOSED;
-        tokenTransfer(tokenId);
-        withdraw(tokenId);
-    }
-
-    /**
-     * @dev This will transfer NFT after it's bidding ends
-     * Function to be changed to allow auction winner to transfer token for himself with approve()
-     */
-    function tokenTransfer(uint256 tokenId) public onlyOwner {
-        if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
-            revert Abstract__BiddingNotFinishedYetForThisNFT();
-        }
-        safeTransferFrom(msg.sender, getBidder(tokenId), tokenId);
-    }
-
-    /**
      * @dev We will be able to withdraw money from contract only for closed biddings
      */
-    function withdraw(uint256 tokenId) public onlyOwner {
-        if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
-            revert Abstract__BiddingNotFinishedYetForThisNFT();
-        }
-
+    function withdraw(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         (bool success, ) = msg.sender.call{value: s_tokenIdToBids[tokenId]}("");
 
         if (!success) {
             revert Abstract__TransferFailed();
         }
+    }
+
+    modifier biddingStateCheck(uint256 tokenId) {
+        if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
+            revert Abstract__BiddingStillOpenForThisNFT();
+        }
+        _;
     }
 
     function getBiddingState(uint256 tokenId) public view returns (BiddingState) {
