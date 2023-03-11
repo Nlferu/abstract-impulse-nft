@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error Abstract__NotEnoughETH();
 error Abstract__TransferFailed();
-error Abstract__TotalSupplyReached();
 error Abstract__NotExistingTokenId();
 error Abstract__BiddingClosedForThisNFT();
 error Abstract__NoBidDetectedForThisToken();
@@ -15,10 +14,8 @@ error Abstract__BiddingStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 
 /**
- *@dev
- * Add "ReentrancyGuard" to protect.
+ * @dev
  * Functions with transfer back ETH should be nonReentrant
- * Check SOLMATE !!!
  */
 contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     // Type Declaration
@@ -28,8 +25,10 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     }
 
     // NFT Variables
-    // Below is not necessary
-    uint256 private immutable MAX_SUPPLY = 300;
+    uint256 constant minBid = 0.01 ether;
+    // Logic to be implemented for below
+    uint256 constant minEndPrice = 0.1 ether;
+    uint256 constant auctionDuration = 86400;
 
     // NFT Mappings
     mapping(uint256 => string) private s_tokenURIs;
@@ -45,9 +44,6 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     constructor() ERC721A("Abstract Impulse", "AIN") {}
 
     function mintNFT(string memory externalTokenURI, string memory nftTitle) public onlyOwner {
-        if ((totalSupply() + 1) >= MAX_SUPPLY) {
-            revert Abstract__TotalSupplyReached();
-        }
         uint256 newTokenId = totalSupply();
         // Changing State For New NFT is not necessary as it is set to OPEN as default...
         // s_tokenIdToBiddingState[newTokenId] = BiddingState.OPEN;
@@ -64,7 +60,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         }
         if (totalSupply() > tokenId) {
             if (s_tokenIdToBidder[tokenId] == address(0)) {
-                if (msg.value == 0) {
+                if (msg.value <= minBid) {
                     revert Abstract__NotEnoughETH();
                 }
 
@@ -76,7 +72,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
                 s_tokenIdToBids[tokenId] = msg.value;
                 emit FirstNFTBidPlaced(msg.value);
             } else {
-                if (msg.value <= s_tokenIdToBids[tokenId]) {
+                if (msg.value <= (s_tokenIdToBids[tokenId] + minBid)) {
                     revert Abstract__NotEnoughETH();
                 }
 
@@ -99,15 +95,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         }
     }
 
-    // Test if it displays images correctly for multiple NFT's
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return s_tokenURIs[tokenId];
     }
-
-    // This can be removed as approved address wont be able to transfer token if bidding not finished
-    // function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
-    //     super.approve(to, tokenId);
-    // }
 
     function safeTransferFrom(address from, address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
         super.safeTransferFrom(from, to, tokenId);
@@ -131,8 +121,8 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         }
         if (s_tokenIdToBiddingState[tokenId] == BiddingState.OPEN) {
             s_tokenIdToBiddingState[tokenId] = BiddingState.CLOSED;
-            approve(s_tokenIdToBidder[tokenId], tokenId);
             withdraw(tokenId);
+            approve(s_tokenIdToBidder[tokenId], tokenId);
         } else {
             revert Abstract__BiddingClosedForThisNFT();
         }

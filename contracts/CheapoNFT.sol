@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract CheapNFT is ERC721, Ownable {
     uint256 public auctionDuration;
 
+    // Worth considering to implement this to our project
     struct Auction {
         address highestBidder;
         uint256 highestBid;
