@@ -13,7 +13,7 @@ contract CheapNFT is ERC721, Ownable {
         uint256 highestBid;
         uint256 endTime;
     }
-
+    uint256 x = 1 minutes;
     mapping(uint256 => Auction) public auctions;
 
     constructor() ERC721("MyNFT", "MNFT") {
