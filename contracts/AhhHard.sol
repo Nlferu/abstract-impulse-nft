@@ -10,7 +10,7 @@ error Abstract__NotEnoughETH();
 error Abstract__TransferFailed();
 error Abstract__AuctionFinished();
 error Abstract__NotExistingTokenId();
-error Abstract__BiddingClosedForThisNFT(); // to be merged with auction finished
+error Abstract__BiddingClosedForThisNFT();
 error Abstract__NoBidDetectedForThisToken();
 error Abstract__BiddingStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
@@ -19,7 +19,7 @@ error Abstract__ContractOwnerIsNotAllowedToBid();
  *@dev
  * Functions with transfer back ETH should be nonReentrant
  */
-contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
+contract AhhHard is ERC721A, ReentrancyGuard, Ownable {
     // Type Declaration
     enum BiddingState {
         OPEN,
@@ -58,7 +58,6 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         emit NFTMinted(msg.sender, nftTitle);
     }
 
-    // Double, tripple bids to be tested via script! As remix shows it causes our contract to be fucked up and lose money!!!
     function placeBid(uint256 tokenId) public payable nonReentrant {
         if (msg.sender == owner()) {
             revert Abstract__ContractOwnerIsNotAllowedToBid();
@@ -83,15 +82,16 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
                                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                                 s_tokenIdToBids[tokenId] = msg.value;
                                 emit FirstNFTBidPlaced(msg.value);
+                                console.log("Mrauu");
                             }
-                        }
-                        if ((s_tokenIdToAuctionStart[tokenId] + auctionDuration - block.timestamp) > 5 minutes) {
+                        } else {
                             if (block.timestamp > s_tokenIdToAuctionStart[tokenId] + auctionDuration) {
                                 revert Abstract__AuctionFinished();
                             } else {
                                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                                 s_tokenIdToBids[tokenId] = msg.value;
                                 emit FirstNFTBidPlaced(msg.value);
+                                console.log("hauusuu");
                             }
                         }
                     } else {
@@ -126,8 +126,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
                                 s_tokenIdToBids[tokenId] = msg.value;
                                 emit NFTBidPlaced(msg.value);
                             }
-                        }
-                        if ((s_tokenIdToAuctionStart[tokenId] + auctionDuration - block.timestamp) > 5 minutes) {
+                        } else {
                             console.log("Time Left:", s_tokenIdToAuctionStart[tokenId] + auctionDuration - block.timestamp);
 
                             if (block.timestamp >= s_tokenIdToAuctionStart[tokenId] + auctionDuration) {
@@ -139,7 +138,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
                                     revert Abstract__TransferFailed();
                                 }
 
-                                console.log("Code Executed!");
+                                console.log("Code Executerrrr!");
                                 s_tokenIdToBidder[tokenId] = payable(msg.sender);
                                 s_tokenIdToBids[tokenId] = msg.value;
                                 emit NFTBidPlaced(msg.value);
