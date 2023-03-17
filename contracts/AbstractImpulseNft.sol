@@ -32,7 +32,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     mapping(uint256 => Auction) private auctions;
 
     // NFT Events
-    event NFT_TokenURISet(string uri);
+    event NFT_SetTokenURI(string uri, uint256 tokenId);
     event NFT_Minted(address minter, uint256 tokenId);
     event NFT_LastBidReturned(uint256 bid, bool transfer);
     event NFT_WithdrawCompleted(uint256 bid, bool transfer);
@@ -52,19 +52,17 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         auction.s_tokenIdToAuctionStart = block.timestamp;
 
         emit NFT_Minted(msg.sender, newTokenId);
-        emit NFT_TokenURISet(auction.s_tokenURIs);
+        emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
     }
 
     function placeBid(uint256 tokenId) public payable nonReentrant {
         Auction storage auction = auctions[tokenId];
         // Make sure the contract owner cannot bid
-        if (msg.sender == owner()) {
-            revert Abstract__ContractOwnerIsNotAllowedToBid();
-        }
+        if (msg.sender == owner()) revert Abstract__ContractOwnerIsNotAllowedToBid();
+
         // Check if NFT exists
-        if (totalSupply() <= tokenId) {
-            revert Abstract__NotExistingTokenId();
-        }
+        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+
         // Check if the auction is still ongoing
         if ((auction.s_tokenIdToAuctionStart + auctionDuration) < block.timestamp) {
             revert Abstract__AuctionFinishedForThisNFT();
@@ -86,16 +84,12 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         // If there were previous bids
         else {
             // Check if the bid amount is high enough
-            if (msg.value < (auction.s_tokenIdToBid + minBid)) {
-                revert Abstract__NotEnoughETH();
-            }
+            if (msg.value < (auction.s_tokenIdToBid + minBid)) revert Abstract__NotEnoughETH();
 
             // Transfer the previous highest bid to the previous bidder
             (bool success, ) = auction.s_tokenIdToBidder.call{value: auction.s_tokenIdToBid}("New Highest Bid Received!");
+            if (!success) revert Abstract__TransferFailed();
 
-            if (!success) {
-                revert Abstract__TransferFailed();
-            }
             emit NFT_LastBidReturned(auction.s_tokenIdToBid, success);
         }
 
@@ -134,9 +128,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
      */
     function acceptBid(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (auction.s_tokenIdToBid == startPrice) {
-            revert Abstract__NoBidReceivedForThisNFT();
-        }
+        if (auction.s_tokenIdToBid == startPrice) revert Abstract__NoBidReceivedForThisNFT();
 
         withdrawMoney(tokenId);
         approve(auction.s_tokenIdToBidder, tokenId);
@@ -147,26 +139,18 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
      */
     function withdrawMoney(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (totalSupply() <= tokenId) {
-            revert Abstract__NotExistingTokenId();
-        }
+        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
 
         (bool success, ) = msg.sender.call{value: auction.s_tokenIdToBid}("");
-        if (!success) {
-            revert Abstract__TransferFailed();
-        }
+        if (!success) revert Abstract__TransferFailed();
 
         emit NFT_WithdrawCompleted(auction.s_tokenIdToBid, success);
     }
 
     function renewAuction(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (totalSupply() <= tokenId) {
-            revert Abstract__NotExistingTokenId();
-        }
-        if (auction.s_tokenIdToBid > startPrice) {
-            revert Abstract__BidReceivedForThisNFT();
-        }
+        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (auction.s_tokenIdToBid > startPrice) revert Abstract__BidReceivedForThisNFT();
 
         auction.s_tokenIdToAuctionStart = block.timestamp - auctionDuration;
 

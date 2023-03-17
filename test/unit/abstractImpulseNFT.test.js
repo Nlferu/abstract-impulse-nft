@@ -2,11 +2,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains } = require("../../helper-hardhat-config")
+const { deployMaliciousContract } = require("../../utils/deployMalicious")
 
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Abstract NFT Unit Tests", function () {
-          let abstractImpulseNFT, abstractInstanceExternal, deployer, user
+          let abstractImpulseNFT, abstractImpulseInstance, resMintTx, recMintTx, tokenId, deployer, user
 
           beforeEach(async () => {
               accounts = await ethers.getSigners()
@@ -23,11 +24,11 @@ const { developmentChains } = require("../../helper-hardhat-config")
                * It gives contract correct name and symbol ✔️
                * It shows 0 minted tokens ✔️
             2. mintNFT()
-               * It creates new tokenId (NFT) and emit's (minter, tokenId)
-               * It assigns correct tokenURI to created NFT and emit's (tokenURI)
-               * It set's correct starting price for created NFT
-               * It set's auction starting time for created NFT
-               * It throws error if called by external user (only owner can mint NFT)
+               * It creates new tokenId (NFT) and emit's (minter, tokenId) ✔️
+               * It assigns correct tokenURI to created NFT and emit's (tokenURI) ✔️
+               * It set's correct starting price for created NFT ✔️
+               * It set's auction starting time for created NFT ✔️
+               * It throws error if called by external user (only owner can mint NFT) ✔️
             3. placeBid()
                * It is nonReentrant
                * It reverts if called by contract owner
@@ -68,7 +69,7 @@ const { developmentChains } = require("../../helper-hardhat-config")
             10. getters()
                * It displays correct data
             */
-
+          // --------------------------------------------------------------------------------------------------------------------------
           describe("Constructor", () => {
               it("Initializes the NFT Correctly.", async () => {
                   const owner = await abstractImpulseNFT.owner()
@@ -82,62 +83,128 @@ const { developmentChains } = require("../../helper-hardhat-config")
                   assert.equal(tokenCounter.toString(), "0")
               })
           })
+          // --------------------------------------------------------------------------------------------------------------------------
+          describe("Mint NFT", () => {
+              beforeEach(async () => {
+                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx")
+                  recMintTx = await resMintTx.wait()
+                  tokenId = recMintTx.events[1].args.tokenId
+              })
+              it("It creates new tokenId (NFT) and emit's (minter, tokenId)", async function () {
+                  // We have to use 1 index as "_mint" function has index 0
+                  const minter = recMintTx.events[1].args.minter
+                  console.log(`Minter: ${minter} TokenId: ${tokenId}`)
+                  const tokenCounter = await abstractImpulseNFT.totalSupply()
 
-          //   describe("Mint NFT", () => {
-          //       beforeEach(async () => {
-          //           const txResponse = await abstractImpulseNFT.mintNFT("tokenURI", "nftTitle")
-          //           await txResponse.wait(1)
-          //       })
-          //       it("Allows owner to mint an NFT", async function () {
-          //           const tokenCounter = await abstractImpulseNFT.getTokenCounter()
-          //           const txResponse = await abstractImpulseNFT.mintNFT("tokenURI", "nftTitle")
+                  assert.equal(tokenCounter, 1)
+                  assert.equal(minter == deployer.address, tokenId == 0)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIx")).to.emit(abstractImpulseNFT, `NFT_Minted`)
+              })
+              it("It assigns correct tokenURI to created NFT and emit's (tokenURI)", async function () {
+                  const tokenURI = recMintTx.events[2].args.uri
+                  tokenId = recMintTx.events[2].args.tokenId
+                  console.log(`TokenURI: ${tokenURI} TokenId: ${tokenId}`)
+                  const setTokenURI = await abstractImpulseNFT.tokenURI(tokenId)
 
-          //           assert(txResponse)
-          //           assert.equal(tokenCounter.toString(), "1")
-          //       })
-          //       it("Emits event when NFT is minted", async function () {
-          //           const txResponse = await abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")
-          //           const txReceipt = await txResponse.wait()
-          //           // We have to use 1 index as "_mint" function has index 0
-          //           const minter = txReceipt.events[1].args.minter
-          //           const title = txReceipt.events[1].args.title
-          //           console.log(`Minter: ${minter} Title: ${title}`)
+                  assert.equal(tokenURI, setTokenURI)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIx")).to.emit(abstractImpulseNFT, `NFT_SetTokenURI`)
+              })
+              it("It set's correct starting price for created NFT", async function () {
+                  const price = await abstractImpulseNFT.getHighestBid(tokenId)
+                  console.log(`Price: ${price}`)
 
-          //           assert.equal(minter == deployer.address, title == "NFT_Title")
-          //           await expect(abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")).to.emit(abstractImpulseNFT, `NFTMinted`)
-          //       })
-          //       it("Not allows accounts other than owner to mint an NFT", async function () {
-          //           const maliciousAccount = accounts[2]
-          //           // In order to use above account we have to first connect it to our mother contract instance
-          //           const abstractExternal = await abstractImpulseNFT.connect(maliciousAccount)
+                  // 0.1 ETH
+                  assert.equal(price, 100000000000000000)
+              })
+              it("It set's auction starting time for created NFT", async function () {
+                  const time = await abstractImpulseNFT.getTime(0)
+                  console.log(`Time: ${time}`)
 
-          //           await expect(abstractExternal.mintNFT("tokenURI", "nftTitle")).to.be.revertedWith("Ownable: caller is not the owner")
-          //       })
-          //       it("Show the correct owner and balance of NFT's", async function () {
-          //           const deployerAddress = deployer.address
-          //           const deployerBalance = await abstractImpulseNFT.balanceOf(deployerAddress)
-          //           const owner = await abstractImpulseNFT.ownerOf("0")
+                  assert.equal(time, 30)
+              })
+              it("It throws error if called by external user (only owner can mint NFT)", async function () {
+                  user = accounts[2]
+                  // In order to use above account we have to first connect it to our mother contract instance
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
 
-          //           // Second Mint
-          //           await abstractImpulseNFT.mintNFT("tokenURI2", "nftTitle2")
-          //           const secBalance = await abstractImpulseNFT.balanceOf(deployerAddress)
-          //           const secOwner = await abstractImpulseNFT.ownerOf("1")
+                  await expect(abstractImpulseInstance.mintNFT("tokenURIxx")).to.be.revertedWith("Ownable: caller is not the owner")
+              })
+              // --------------------------------------------------------------------------------------------------------------------------
+              describe("Place Bid", () => {
+                  beforeEach(async () => {
+                      resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx")
+                      recMintTx = await resMintTx.wait()
+                      tokenId = recMintTx.events[1].args.tokenId
+                  })
+                  it("It is nonReentrant", async function () {
+                      user = accounts[2]
+                      const malContract = await deployMaliciousContract(user, abstractImpulseNFT.address)
+                      //const malContract = await ethers.getContract("MaliciousContract")
+                      const victimAdd = await malContract.getVictim()
+                      console.log(`Victim Address: ${victimAdd} NFT Add: ${abstractImpulseNFT.address}`)
+                  })
+                  it("It reverts if called by contract owner", async function () {})
+                  it("It reverts if tokenId doesn't exist", async function () {})
+                  it("It reverts if auction still ongoing for given tokenId", async function () {})
+                  it("It extends auction time if auction is close to ending and bid is received", async function () {})
+                  it("It reverts if amount sent is less than start price for given tokenId if first bid", async function () {})
+                  it("It reverts if amount sent is less than lastest bid plus min bid amount for given tokenId if not first bid", async function () {})
+                  it("It transfers latest lower bid to correct bidder if higher bid received and emit's (bid, transfer) if not first bid", async function () {})
+                  it("It assigns highestBidder per tokenId", async function () {})
+                  it("It assigns highestBid per tokenId", async function () {})
+                  it("It emit's (bid, bidder, tokenId)", async function () {})
+              })
 
-          //           assert.equal(deployerBalance.toString(), "1")
-          //           assert.equal(owner, deployerAddress)
-          //           assert.equal(secBalance.toString(), "2")
-          //           assert.equal(secOwner, deployerAddress)
-          //           await expect(abstractImpulseNFT.ownerOf("2")).to.be.revertedWith("ERC721: invalid token ID")
-          //       })
-          //       it("Assigns correct tokenId to tokenURI", async function () {
-          //           const assignedURI = await abstractImpulseNFT.getTokenIdToTokenURI(0)
-          //           await abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")
-          //           const secondAssignedURI = await abstractImpulseNFT.getTokenIdToTokenURI(1)
+              //   it("Allows owner to mint an NFT", async function () {
+              //       const tokenCounter = await abstractImpulseNFT.getTokenCounter()
+              //       const txResponse = await abstractImpulseNFT.mintNFT("tokenURI", "nftTitle")
 
-          //           assert.equal(assignedURI, "tokenURI")
-          //           assert.equal(secondAssignedURI, "Token_URI")
-          //       })
-          //   })
+              //       assert(txResponse)
+              //       assert.equal(tokenCounter.toString(), "1")
+              //   })
+              //   it("Emits event when NFT is minted", async function () {
+              //       const txResponse = await abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")
+              //       const txReceipt = await txResponse.wait()
+              //       // We have to use 1 index as "_mint" function has index 0
+              //       const minter = txReceipt.events[1].args.minter
+              //       const title = txReceipt.events[1].args.title
+              //       console.log(`Minter: ${minter} Title: ${title}`)
+
+              //       assert.equal(minter == deployer.address, title == "NFT_Title")
+              //       await expect(abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")).to.emit(abstractImpulseNFT, `NFTMinted`)
+              //   })
+              //   it("Not allows accounts other than owner to mint an NFT", async function () {
+              //       const maliciousAccount = accounts[2]
+              //       // In order to use above account we have to first connect it to our mother contract instance
+              //       const abstractExternal = await abstractImpulseNFT.connect(maliciousAccount)
+
+              //       await expect(abstractExternal.mintNFT("tokenURI", "nftTitle")).to.be.revertedWith("Ownable: caller is not the owner")
+              //   })
+              //   it("Show the correct owner and balance of NFT's", async function () {
+              //       const deployerAddress = deployer.address
+              //       const deployerBalance = await abstractImpulseNFT.balanceOf(deployerAddress)
+              //       const owner = await abstractImpulseNFT.ownerOf("0")
+
+              //       // Second Mint
+              //       await abstractImpulseNFT.mintNFT("tokenURI2", "nftTitle2")
+              //       const secBalance = await abstractImpulseNFT.balanceOf(deployerAddress)
+              //       const secOwner = await abstractImpulseNFT.ownerOf("1")
+
+              //       assert.equal(deployerBalance.toString(), "1")
+              //       assert.equal(owner, deployerAddress)
+              //       assert.equal(secBalance.toString(), "2")
+              //       assert.equal(secOwner, deployerAddress)
+              //       await expect(abstractImpulseNFT.ownerOf("2")).to.be.revertedWith("ERC721: invalid token ID")
+              //   })
+              //   it("Assigns correct tokenId to tokenURI", async function () {
+              //       const assignedURI = await abstractImpulseNFT.getTokenIdToTokenURI(0)
+              //       await abstractImpulseNFT.mintNFT("Token_URI", "NFT_Title")
+              //       const secondAssignedURI = await abstractImpulseNFT.getTokenIdToTokenURI(1)
+
+              //       assert.equal(assignedURI, "tokenURI")
+              //       assert.equal(secondAssignedURI, "Token_URI")
+              //   })
+          })
           //   describe("Place Bid", () => {
           //       beforeEach(async () => {
           //           const txResponse = await abstractImpulseNFT.mintNFT("tokenURI", "nftTitle")
