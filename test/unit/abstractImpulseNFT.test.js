@@ -1,8 +1,6 @@
-// Tests in progress...
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains } = require("../../helper-hardhat-config")
-const { deployMaliciousContract } = require("../../utils/deployMalicious")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -137,10 +135,12 @@ const { deployMaliciousContract } = require("../../utils/deployMalicious")
                       tokenId = recMintTx.events[1].args.tokenId
                   })
                   it("It is nonReentrant", async function () {
-                      user = accounts[2]
-                      const malContract = await deployMaliciousContract(user, abstractImpulseNFT.address)
-                      //const malContract = await ethers.getContract("MaliciousContract")
-                      const victimAdd = await malContract.getVictim()
+                      user = accounts[1]
+
+                      await deployments.fixture(["MaliciousContract"])
+                      maliciousContract = await ethers.getContract("MaliciousContract")
+
+                      const victimAdd = await maliciousContract.getVictim()
                       console.log(`Victim Address: ${victimAdd} NFT Add: ${abstractImpulseNFT.address}`)
                   })
                   it("It reverts if called by contract owner", async function () {})
