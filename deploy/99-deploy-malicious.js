@@ -4,6 +4,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
     const { user } = await getNamedAccounts()
 
+    // Below line is causing `log()` to not working
     await deployments.fixture(["AbstractImpulseNFT"])
     const abstractImpulseNFT = await ethers.getContract("AbstractImpulseNFT")
     const abstractImpulseNFTAddress = abstractImpulseNFT.address
