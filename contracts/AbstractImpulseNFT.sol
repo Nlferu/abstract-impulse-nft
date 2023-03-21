@@ -35,7 +35,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     event NFT_SetTokenURI(string uri, uint256 tokenId);
     event NFT_Minted(address minter, uint256 tokenId);
     event NFT_LastBidReturned(uint256 bid, bool transfer);
-    event NFT_WithdrawCompleted(uint256 bid, bool transfer);
+    event NFT_WithdrawCompleted(uint256 amount, bool transfer);
     event NFT_AuctionExtended(uint256 time, uint256 tokenId);
     event NFT_BidPlaced(uint256 amount, address bidder, uint256 tokenId);
 
@@ -71,7 +71,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         // Extend the auction by 5 minutes if it's close to ending
         if ((auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp) < 2 minutes) {
             auction.s_tokenIdToAuctionStart += 2 minutes;
-            emit NFT_AuctionExtended(tokenId, auction.s_tokenIdToAuctionStart);
+            emit NFT_AuctionExtended(auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp, tokenId);
         }
 
         // If there were no previous bids
@@ -181,8 +181,11 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         return auction.s_tokenIdToBid;
     }
 
-    function getBidderBalance(address bidderId) public view returns (uint256) {
-        return bidderId.balance;
+    /**
+     * @dev Function To Be Deleted
+     */
+    function getBidderBalance(address bidderAddress) public view returns (uint256) {
+        return bidderAddress.balance;
     }
 
     function getTime(uint256 tokenId) public view returns (uint256) {
