@@ -33,13 +33,13 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                * It reverts if called by contract owner ✔️
                * It reverts if tokenId doesn't exist ✔️
                * It reverts if auction already finished for given tokenId ✔️
-               * It extends auction time if auction is close to ending and bid is received
-               * It reverts if amount sent is less than start price for given tokenId if first bid
-               * It reverts if amount sent is less than lastest bid plus min bid amount for given tokenId if not first bid
-               * It transfers latest lower bid to correct bidder if higher bid received and emit's (bid, transfer) if not first bid
-               * It assigns highestBidder per tokenId
-               * It assigns highestBid per tokenId
-               * It emit's (bid, bidder, tokenId)
+               * It extends auction time if auction is close to ending and bid is received ✔️
+               * It reverts if amount sent is less than start price for given tokenId if first bid ✔️
+               * It reverts if amount sent is less than lastest bid plus min bid amount for given tokenId if not first bid ✔️
+               * It transfers latest lower bid to correct bidder if higher bid received and emit's (bid, transfer) if not first bid ✔️
+               * It assigns highestBidder per tokenId ✔️
+               * It assigns highestBid per tokenId ✔️
+               * It emit's (bid, bidder, tokenId) ✔️
             4. tokenURI()
                * It returns correct tokenURI per tokenId
             5. approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()
@@ -179,6 +179,10 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.159") })).to.be.revertedWith("Abstract__NotEnoughETH")
               })
               it("It transfers latest lower bid to correct bidder if higher bid received and emit's (bid, transfer) if not first bid", async function () {
+                  // Below are also included in this test
+                  // it("It assigns highestBidder per tokenId", async function () {})
+                  // it("It assigns highestBid per tokenId", async function () {})
+                  // it("It emit's (bid, bidder, tokenId)", async function () {})
                   sec_user = accounts[2]
                   const startingBalance = parseEther("10000")
                   const txResponse = await abstractImpulseInstance.placeBid(0, { value: parseEther("15") })
@@ -234,9 +238,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(secBalETH.toString(), startingBalance.sub(newBid).sub(newGasCost).toString())
                   await expect(resRetTx).to.emit(abstractImpulseNFT, `NFT_LastBidReturned`)
               })
-              it("It assigns highestBidder per tokenId", async function () {})
-              it("It assigns highestBid per tokenId", async function () {})
-              it("It emit's (bid, bidder, tokenId)", async function () {})
           })
 
           //   it("Allows owner to mint an NFT", async function () {
