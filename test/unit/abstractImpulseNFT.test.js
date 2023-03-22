@@ -41,12 +41,12 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                * It assigns highestBid per tokenId ✔️
                * It emit's (bid, bidder, tokenId) ✔️
             4. tokenURI()
-               * It returns correct tokenURI per tokenId
+               * It returns correct tokenURI per tokenId ✔️
             5. approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()
-               * It is usable for tokenId's, which auction's have finished and minBid received
-               * It is not allowed to use for tokenId's for which bidding is still ongoing            
+               * It is usable for tokenId's, which auction's have finished and minBid received ✔️
+               * It is not allowed to use for tokenId's for which bidding is still ongoing ✔️
             6. setApprovalForAll()
-               * It reverts once used
+               * It reverts once used ✔️
             7. acceptBid()
                * It is usable for only owner
                * It is usable for tokenId's for which auction already finished only
@@ -114,7 +114,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   console.log(`Price: ${price}`)
 
                   // 0.1 ETH
-                  assert.equal(price, 100000000000000000)
+                  assert.equal(price.toString(), parseEther("0.1").toString())
               })
               it("It set's auction starting time for created NFT", async function () {
                   const time = await abstractImpulseNFT.getTime(0)
@@ -239,7 +239,109 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(resRetTx).to.emit(abstractImpulseNFT, `NFT_LastBidReturned`)
               })
           })
+          describe("Save And Read TokenURI", () => {
+              it("It returns correct tokenURI per tokenId", async () => {
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
+                  await abstractImpulseNFT.mintNFT("SecondTokenURI")
 
+                  let tokenURI = await abstractImpulseNFT.tokenURI(0)
+                  assert.equal(tokenURI, "FirstTokenURI")
+                  tokenURI = await abstractImpulseNFT.tokenURI(1)
+                  assert.equal(tokenURI, "SecondTokenURI")
+              })
+          })
+          describe("Functions allowed to use: approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()", () => {
+              beforeEach(async () => {
+                  user = accounts[3]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
+                  await network.provider.send("evm_mine", [])
+
+                  tokenId = (await abstractImpulseNFT.totalSupply()) - 1
+              })
+              it("It is usable for tokenId's, which auction's have finished and minBid received if called by not approved owner it reverts approve() transferFrom()", async () => {
+                  const highestBid = await abstractImpulseNFT.getHighestBid(tokenId)
+                  const highestBidder = await abstractImpulseNFT.getHighestBidder(tokenId)
+                  const time = await abstractImpulseNFT.getTime(tokenId)
+                  console.log(`Bid: ${highestBid} Bidder: ${highestBidder} Time: ${time} TokenId: ${tokenId}`)
+
+                  await expect(abstractImpulseInstance.approve(user.address, tokenId)).to.be.revertedWith("ApprovalCallerNotOwnerNorApproved")
+                  await expect(abstractImpulseInstance.transferFrom(deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "TransferCallerNotOwnerNorApproved"
+                  )
+                  await expect(abstractImpulseNFT.approve(user.address, tokenId)).to.emit(abstractImpulseNFT, "Approval")
+                  await expect(abstractImpulseNFT.transferFrom(deployer.address, user.address, tokenId)).to.emit(abstractImpulseNFT, "Transfer")
+              })
+              it("It is usable for tokenId's, which auction's have finished and minBid received if called by not approved owner it reverts safeTransferFrom()", async () => {
+                  await expect(
+                      abstractImpulseInstance["safeTransferFrom(address,address,uint256)"](deployer.address, user.address, tokenId)
+                  ).to.be.revertedWith("TransferCallerNotOwnerNorApproved")
+                  await expect(abstractImpulseNFT["safeTransferFrom(address,address,uint256)"](deployer.address, user.address, tokenId)).to.emit(
+                      abstractImpulseNFT,
+                      "Transfer"
+                  )
+              })
+              it("It is usable for tokenId's, which auction's have finished and minBid received if called by not approved owner it reverts safeTransferFrom(_data)", async () => {
+                  await expect(
+                      abstractImpulseInstance["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
+                  ).to.be.revertedWith("TransferCallerNotOwnerNorApproved")
+                  await expect(
+                      abstractImpulseNFT["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
+                  ).to.emit(abstractImpulseNFT, "Transfer")
+              })
+          })
+          describe("Functions not allowed to use: approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()", () => {
+              beforeEach(async () => {
+                  user = accounts[3]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+              })
+              it("It is not allowed to use any of above functions for tokenId's for which bidding is still ongoing", async () => {
+                  // abstractImpulseInstance ------------------------------------------------------------------------------------------------------------------
+                  await expect(abstractImpulseInstance.approve(user.address, tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
+                  await expect(abstractImpulseInstance.transferFrom(deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "Abstract__AuctionStillOpenForThisNFT"
+                  )
+                  await expect(
+                      abstractImpulseInstance["safeTransferFrom(address,address,uint256)"](deployer.address, user.address, tokenId)
+                  ).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
+                  await expect(
+                      abstractImpulseInstance["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
+                  ).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
+
+                  // abstractImpulseNFT ------------------------------------------------------------------------------------------------------------------
+                  await expect(abstractImpulseNFT.approve(user.address, tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
+                  await expect(abstractImpulseNFT.transferFrom(deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "Abstract__AuctionStillOpenForThisNFT"
+                  )
+                  await expect(abstractImpulseNFT["safeTransferFrom(address,address,uint256)"](deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "Abstract__AuctionStillOpenForThisNFT"
+                  )
+                  await expect(
+                      abstractImpulseNFT["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
+                  ).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
+              })
+          })
+          describe("Set Approval For All Function", () => {
+              it("It reverts once used", async () => {
+                  user = accounts[4]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  await expect(abstractImpulseInstance.setApprovalForAll(user.address, true)).to.be.revertedWith("Abstract__FunctionDisabled")
+                  await expect(abstractImpulseNFT.setApprovalForAll(user.address, true)).to.be.revertedWith("Abstract__FunctionDisabled")
+              })
+          })
+          describe("Accept Bid", () => {
+              beforeEach(async () => {})
+              it("It is usable for only owner", async () => {})
+              it("It is usable for tokenId's for which auction already finished only", async () => {})
+              it("It reverts if given tokenId doesn't exist", async () => {})
+              it("It reverts if there was no bid received for given tokenId", async () => {})
+              it("It withdraw's money back to owner for each tokenId and emit's (bid, transfer)", async () => {})
+              it("It approve's highest bidding address per tokenId to claim NFT and emit's (owner, approvedAddress, tokenId)", async () => {})
+          })
           //   it("Allows owner to mint an NFT", async function () {
           //       const tokenCounter = await abstractImpulseNFT.getTokenCounter()
           //       const txResponse = await abstractImpulseNFT.mintNFT("tokenURI", "nftTitle")

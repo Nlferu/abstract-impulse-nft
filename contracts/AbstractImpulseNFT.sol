@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error Abstract__NotEnoughETH();
 error Abstract__TransferFailed();
+error Abstract__FunctionDisabled();
 error Abstract__NotExistingTokenId();
 error Abstract__BidReceivedForThisNFT();
 error Abstract__NoBidReceivedForThisNFT();
@@ -121,7 +122,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     }
 
     // Function disabled! It is pure so cannot be called anyway
-    function setApprovalForAll(address /*operator*/, bool /*approved*/) public pure override {}
+    function setApprovalForAll(address /*operator*/, bool /*approved*/) public pure override {
+        revert Abstract__FunctionDisabled();
+    }
 
     /**
      * @dev This will occur once timer end or if owner decide to accept bid, so js script has to trigger it, but there is onlyOwner approval needed
