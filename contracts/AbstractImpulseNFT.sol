@@ -33,11 +33,12 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     mapping(uint256 => Auction) private auctions;
 
     // NFT Events
-    event NFT_SetTokenURI(string uri, uint256 tokenId);
+    event NFT_BidAccepted(uint256 tokenId);
     event NFT_Minted(address minter, uint256 tokenId);
+    event NFT_SetTokenURI(string uri, uint256 tokenId);
     event NFT_LastBidReturned(uint256 bid, bool transfer);
-    event NFT_WithdrawCompleted(uint256 amount, bool transfer);
     event NFT_AuctionExtended(uint256 time, uint256 tokenId);
+    event NFT_WithdrawCompleted(uint256 amount, bool transfer);
     event NFT_BidPlaced(uint256 amount, address bidder, uint256 tokenId);
 
     constructor() ERC721A("Abstract Impulse", "AIN") {}
@@ -131,10 +132,12 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
      */
     function acceptBid(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (auction.s_tokenIdToBid == startPrice) revert Abstract__NoBidReceivedForThisNFT();
+        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         withdrawMoney(tokenId);
         approve(auction.s_tokenIdToBidder, tokenId);
+        emit NFT_BidAccepted(tokenId);
     }
 
     /**
@@ -143,6 +146,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     function withdrawMoney(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
         if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         (bool success, ) = msg.sender.call{value: auction.s_tokenIdToBid}("");
         if (!success) revert Abstract__TransferFailed();
