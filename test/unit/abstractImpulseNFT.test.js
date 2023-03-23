@@ -456,4 +456,14 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               it("It reverts if there was no bid received for given tokenId", async () => {})
               it("It withdraw's money back to owner for each tokenId and emit's (bid, transfer)", async () => {})
           })
+          describe("Renew Auction", () => {
+              it("It is usable only for tokenId's for which auction already finished and without bid received and can be called by owner only", async () => {})
+              it("It reverts if given tokenId doesn't exist", async () => {})
+              it("It reverts if auction not finished for given tokenId", async () => {})
+              it("It reverts if there was bid received for given tokenId", async () => {})
+              it("It renew and sets correct auction time for given tokenId and emit's (time, tokenId)", async () => {})
+          })
+          describe("Getters", () => {
+              it("It displays correct data", async () => {})
+          })
       })
