@@ -173,10 +173,10 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     }
 
     // Function to be deleted
-    function getLogic(uint256 tokenId) public view returns (bool) {
-        Auction storage auction = auctions[tokenId];
-        return auction.s_tokenIdToBidder == address(0);
-    }
+    // function getLogic(uint256 tokenId) public view returns (bool) {
+    //     Auction storage auction = auctions[tokenId];
+    //     return auction.s_tokenIdToBidder == address(0);
+    // }
 
     function getHighestBidder(uint256 tokenId) public view returns (address) {
         Auction storage auction = auctions[tokenId];
@@ -191,9 +191,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
     /**
      * @dev Function To Be Deleted
      */
-    function getBidderBalance(address bidderAddress) public view returns (uint256) {
-        return bidderAddress.balance;
-    }
+    // function getBidderBalance(address bidderAddress) public view returns (uint256) {
+    //     return bidderAddress.balance;
+    // }
 
     function getTime(uint256 tokenId) public view returns (uint256) {
         Auction storage auction = auctions[tokenId];

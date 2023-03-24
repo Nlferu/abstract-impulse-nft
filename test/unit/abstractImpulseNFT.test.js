@@ -494,6 +494,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   tokenId = 0
               })
               it("It is usable only for tokenId's for which auction already finished and without bid received and can be called by owner only", async () => {
+                  // Below is also included in this test
+                  // it("It renew and sets correct auction time for given tokenId and emit's (time, tokenId)"
                   await abstractImpulseNFT.mintNFT("TokenURI_X")
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION])
                   await network.provider.send("evm_mine", [])
@@ -509,7 +511,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   tokenId = recTx.events[0].args.tokenId
 
                   getTime = await abstractImpulseNFT.getTime(tokenId)
-                  console.log(`Time Left After Renewal: ${getTime} tim ${time}`)
+                  console.log(`Time Left After Renewal: ${getTime}`)
 
                   assert.equal(getTime.toString(), time.toString())
                   await expect(resTx).to.emit(abstractImpulseNFT, "NFT_AuctionExtended")
@@ -532,9 +534,17 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__BidReceivedForThisNFT")
               })
-              it("It renew and sets correct auction time for given tokenId and emit's (time, tokenId)", async () => {})
           })
           describe("Getters", () => {
-              it("It displays correct data", async () => {})
+              beforeEach(async () => {
+                  tokenId = 0
+              })
+              it("It displays correct data", async () => {
+                  await expect(abstractImpulseNFT.getTime(tokenId)).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
+
+                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+
+                  await expect(abstractImpulseNFT.getTime(tokenId)).to.not.reverted
+              })
           })
       })
