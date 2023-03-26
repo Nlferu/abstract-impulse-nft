@@ -61,13 +61,13 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                * It reverts if there was no bid received for given tokenId ✔️
                * It withdraw's money back to owner for each tokenId and emit's (bid, transfer) ✔️
             9. renewAuction()
-               * It is usable for only owner
-               * It is usable for tokenId's for which auction already finished only
-               * It reverts if given tokenId doesn't exist
-               * It reverts if there was bid received for given tokenId
-               * It renew and sets correct auction time for given tokenId and emit's (time, tokenId)
+               * It is usable for only owner ✔️
+               * It is usable for tokenId's for which auction already finished only ✔️
+               * It reverts if given tokenId doesn't exist ✔️
+               * It reverts if there was bid received for given tokenId ✔️
+               * It renew and sets correct auction time for given tokenId and emit's (time, tokenId) ✔️
             10. getters()
-               * It displays correct data
+               * It displays correct data ✔️
             */
           // --------------------------------------------------------------------------------------------------------------------------
           describe("Constructor", () => {

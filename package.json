@@ -24,7 +24,8 @@
     "fs": "^0.0.1-security",
     "mime": "^3.0.0",
     "nft.storage": "^6.0.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "prompt-sync": "^4.2.0"
   },
   "scripts": {
     "test": "hardhat test",

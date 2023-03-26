@@ -8,10 +8,4 @@ getHighestBid(frontend)
 safeTransferFrom(frontend)
 placeBid(frontend)
 
-mintNFT (backend)
-approve(backend)
-acceptBid(backend)
-withdrawMoney(backend)
-renewAuction(backend)
-
 */
