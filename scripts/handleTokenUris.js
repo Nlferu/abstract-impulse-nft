@@ -18,7 +18,7 @@ async function handleTokenUris() {
             console.log("Saving Images URIs To File...")
         }
 
-        storeUris.push(`https://gateway.pinata.cloud/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash.toString()}` + "\n")
+        storeUris.push(`https://ipfs.io/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash.toString()}` + "\n")
         fs.writeFileSync(uploadedImagesURIs, storeUris.toString().replace(",", ""))
     }
 
@@ -34,19 +34,19 @@ async function handleTokenUris() {
         // Editing Metadata
         tokenUriMetadata.name = files[imageUploadResponseIndex].replace(".jpg", "")
         tokenUriMetadata.description = `Unique ${tokenUriMetadata.name} art`
-        tokenUriMetadata.image = `https://gateway.pinata.cloud/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`
+        tokenUriMetadata.image = `https://ipfs.io/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`
         console.log(`Uploading ${tokenUriMetadata.name} metadata...`)
 
         // Store the JSON to pinata/IPFS
         // Uploading MetaData To Pinata
         const metadataUploadResponse = await storeTokenUriMetadata(tokenUriMetadata)
-        tokenUris.push(`https://gateway.pinata.cloud/ipfs/${metadataUploadResponse.IpfsHash}`)
+        tokenUris.push(`https://ipfs.io/ipfs/${metadataUploadResponse.IpfsHash}`)
 
         // Saving Uploaded Metadata URIs In "utils" folder under "uploadedURIs" file
         if (imageUploadResponseIndex == imageUploadResponseIndex.length) {
             console.log("Saving Metadata URIs To File...")
         }
-        storeUris.push(`https://gateway.pinata.cloud/ipfs/${metadataUploadResponse.IpfsHash.toString()}` + "\n")
+        storeUris.push(`https://ipfs.io/ipfs/${metadataUploadResponse.IpfsHash.toString()}` + "\n")
         fs.writeFileSync(uploadedMetadataURIs, storeUris.toString().replace(",", ""))
     }
     console.log("Token URIs uploaded! They are:")

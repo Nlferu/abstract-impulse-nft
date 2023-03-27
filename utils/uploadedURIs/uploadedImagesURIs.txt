@@ -1,2 +1,2 @@
-https://gateway.pinata.cloud/ipfs/QmU9p5bfEJHsqHHqLF8fLQaFXVVtK9HehwqbjFDC2oQCJS
-https://gateway.pinata.cloud/ipfs/QmYSE66QZMaaMMEFD46hHFbhDvraXM4Za5Th7c1biQ4CMD
+https://ipfs.io/ipfs/QmU9p5bfEJHsqHHqLF8fLQaFXVVtK9HehwqbjFDC2oQCJS
+https://ipfs.io/ipfs/QmYSE66QZMaaMMEFD46hHFbhDvraXM4Za5Th7c1biQ4CMD
