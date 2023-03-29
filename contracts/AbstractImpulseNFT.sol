@@ -63,7 +63,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         if (msg.sender == owner()) revert Abstract__ContractOwnerIsNotAllowedToBid();
 
         // Check if NFT exists
-        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
 
         // Check if the auction is still ongoing
         if ((auction.s_tokenIdToAuctionStart + auctionDuration) < block.timestamp) {
@@ -132,7 +132,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
      */
     function acceptBid(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
         if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         withdrawMoney(tokenId);
@@ -145,7 +145,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
      */
     function withdrawMoney(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
         if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         (bool success, ) = msg.sender.call{value: auction.s_tokenIdToBid}("");
@@ -156,7 +156,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
 
     function renewAuction(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
-        if (totalSupply() <= tokenId) revert Abstract__NotExistingTokenId();
+        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
         if (auction.s_tokenIdToBidder != address(0)) revert Abstract__BidReceivedForThisNFT();
 
         auction.s_tokenIdToAuctionStart = block.timestamp;
