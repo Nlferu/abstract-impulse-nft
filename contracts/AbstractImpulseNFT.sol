@@ -122,7 +122,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         super.safeTransferFrom(from, to, tokenId, _data);
     }
 
-    // Function disabled! It is pure so cannot be called anyway
+    // Function disabled!
     function setApprovalForAll(address /*operator*/, bool /*approved*/) public pure override {
         revert Abstract__FunctionDisabled();
     }
