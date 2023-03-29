@@ -15,7 +15,7 @@ error Abstract__AuctionFinishedForThisNFT();
 error Abstract__AuctionStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 
-contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
+contract AbstractImpulseAlt is ERC721A, ReentrancyGuard, Ownable {
     // NFT Structs
     struct Auction {
         string s_tokenURIs;
@@ -31,6 +31,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
 
     // NFT Mappings
     mapping(uint256 => Auction) private auctions;
+    mapping(address => uint256) private pendingReturns;
 
     // NFT Events
     event NFT_BidAccepted(uint256 indexed tokenId);
@@ -57,6 +58,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
     }
 
+    /** @dev Instead of transferring money back to outbidded addres, give them opportunity to withdraw money */
     function placeBid(uint256 tokenId) public payable nonReentrant {
         Auction storage auction = auctions[tokenId];
         // Make sure the contract owner cannot bid
@@ -89,10 +91,12 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
             if (msg.value < (auction.s_tokenIdToBid + minBid)) revert Abstract__NotEnoughETH();
 
             // Transfer the previous highest bid to the previous bidder
-            (bool success, ) = auction.s_tokenIdToBidder.call{value: auction.s_tokenIdToBid}("New Highest Bid Received!");
-            if (!success) revert Abstract__TransferFailed();
+            // (bool success, ) = auction.s_tokenIdToBidder.call{value: auction.s_tokenIdToBid}("New Highest Bid Received!");
+            // if (!success) revert Abstract__TransferFailed();
 
-            emit NFT_LastBidReturned(auction.s_tokenIdToBid, success);
+            pendingReturns[msg.sender] += auction.s_tokenIdToBid;
+
+            emit NFT_LastBidReturned(auction.s_tokenIdToBid, true);
         }
 
         // Update the bid and bidder
@@ -138,6 +142,22 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         withdrawMoney(tokenId);
         approve(auction.s_tokenIdToBidder, tokenId);
         emit NFT_BidAccepted(tokenId);
+    }
+
+    function withdrawPending() public payable {
+        uint256 amount = pendingReturns[msg.sender];
+
+        if (amount > 0) {
+            pendingReturns[msg.sender] = 0;
+        } else {
+            revert Abstract__NotEnoughETH();
+        }
+
+        (bool success, ) = msg.sender.call{value: amount}("");
+        if (!success) {
+            pendingReturns[msg.sender] = amount;
+            revert Abstract__TransferFailed();
+        }
     }
 
     /**
@@ -202,5 +222,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         }
 
         return auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp;
+    }
+
+    function getPending(address bidder) public view returns (uint256) {
+        return pendingReturns[bidder];
     }
 }
