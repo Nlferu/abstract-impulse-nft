@@ -7,7 +7,6 @@ let tokenURI = prompt("TokenURI of new NFT: ")
 async function mintNFT() {
     const { deployer } = await getNamedAccounts()
 
-    /** @dev Getting last deployed contract on picked network */
     const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
     console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${deployer}`)

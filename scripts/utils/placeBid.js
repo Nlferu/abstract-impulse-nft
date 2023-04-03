@@ -8,7 +8,6 @@ let tokenId = prompt("TokenId: ")
 async function placeBid() {
     const { deployer } = await getNamedAccounts()
 
-    /** @dev Getting last deployed contract on picked network */
     const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
     console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
