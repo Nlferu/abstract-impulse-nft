@@ -34,8 +34,8 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
 
     // NFT Events
     event NFT_BidAccepted(uint256 indexed tokenId);
-    event NFT_Minted(address indexed minter, uint256 indexed tokenId);
     event NFT_SetTokenURI(string uri, uint256 indexed tokenId);
+    event NFT_Minted(address indexed minter, uint256 indexed tokenId);
     event NFT_LastBidReturned(uint256 indexed bid, bool indexed transfer);
     event NFT_AuctionExtended(uint256 indexed time, uint256 indexed tokenId);
     event NFT_WithdrawCompleted(uint256 indexed amount, bool indexed transfer);
@@ -48,9 +48,9 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         Auction storage auction = auctions[newTokenId];
 
         _mint(msg.sender, 1);
-        auction.s_tokenURIs = externalTokenURI;
-        // tokenURI(newTokenId);    // -> do we call it or not?
+
         auction.s_tokenIdToBid = startPrice;
+        auction.s_tokenURIs = externalTokenURI;
         auction.s_tokenIdToAuctionStart = block.timestamp;
 
         emit NFT_Minted(msg.sender, newTokenId);
