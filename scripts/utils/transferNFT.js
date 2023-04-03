@@ -10,7 +10,7 @@ async function transferNFT() {
     /** @dev Getting last deployed contract on picked network */
     const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
-    console.log(`Working On AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
 
     const responseTx = await abstractImpulseNFT["safeTransferFrom(address,address,uint256)"](
         "0x50e2a33B9E04e78bF1F1d1F94b0be95Be63C23e7",

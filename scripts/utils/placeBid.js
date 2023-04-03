@@ -11,7 +11,7 @@ async function placeBid() {
     /** @dev Getting last deployed contract on picked network */
     const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
-    console.log(`Working On AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
 
     const responseTx = await abstractImpulseNFT.placeBid(tokenId, { value: parseEther("0.11") })
     const receiptTx = await responseTx.wait()

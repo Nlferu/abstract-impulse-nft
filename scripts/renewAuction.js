@@ -10,7 +10,7 @@ async function renewAuction() {
     /** @dev Getting last deployed contract on picked network */
     const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
-    console.log(`Working On AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${deployer}`)
 
     const responseTx = await abstractImpulseNFT.renewAuction(tokenId)
     const receiptTx = await responseTx.wait()
