@@ -13,6 +13,8 @@ const networkConfig = {
     },
 }
 
+const motherContract = "0x554F6d63d899DB2ef4644CB29593A8d6659BF1cB"
+
 const developmentChains = ["hardhat", "localhost"]
 const DECIMALS = "18"
 const INITIAL_PRICE = "200000000000000000000"
@@ -29,4 +31,5 @@ module.exports = {
     AUCTION_DURATION,
     uploadedImagesURIs,
     uploadedMetadataURIs,
+    motherContract,
 }

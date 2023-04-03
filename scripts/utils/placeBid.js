@@ -1,5 +1,5 @@
 const { ethers, getNamedAccounts, network } = require("hardhat")
-const { developmentChains } = require("../../helper-hardhat-config")
+const { developmentChains, motherContract } = require("../../helper-hardhat-config")
 const { parseEther } = require("ethers/lib/utils")
 const prompt = require("prompt-sync")()
 
@@ -9,7 +9,7 @@ async function placeBid() {
     const { deployer } = await getNamedAccounts()
 
     /** @dev Getting last deployed contract on picked network */
-    const abstractImpulseNFT = await ethers.getContract("AbstractImpulseNFT", deployer)
+    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
 
     console.log(`Working On AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
 
