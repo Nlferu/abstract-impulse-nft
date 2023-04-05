@@ -179,7 +179,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.15") })
                   await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.159") })).to.be.revertedWith("Abstract__NotEnoughETH")
               })
-              it("It transfers latest lower bid to correct bidder if higher bid received and emit's (bid, transfer) if not first bid", async function () {
+              it("It adds previous bids for pending withdrawal for losing bidder's and allow them to withdraw those", async function () {
                   // Below are also included in this test
                   // it("It assigns highestBidder per tokenId")
                   // it("It assigns highestBid per tokenId")
@@ -195,10 +195,11 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   console.log(`Bid Value: ${bidVal.toString()} WEI Bidder: ${bidder} tokenId: ${tokenId} Time Left: ${time}`)
 
+                  let pendingWithdrawal = await abstractImpulseNFT.getPending(user.address)
                   let contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
                   let balanceETH = await ethers.provider.getBalance(user.address)
                   let secBalETH = await ethers.provider.getBalance(sec_user.address)
-                  console.log(`Balance Of First User: ${balanceETH} ETH Second User: ${secBalETH} WEI`)
+                  console.log(`Balance Of First User: ${balanceETH} ETH Second User: ${secBalETH} WEI Pending Withdrawal Balance: ${pendingWithdrawal}`)
 
                   let highestBid = await abstractImpulseNFT.getHighestBid(tokenId)
                   let highestBidder = await abstractImpulseNFT.getHighestBidder(tokenId)
@@ -207,6 +208,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const { gasUsed, effectiveGasPrice } = txReceipt
                   const gasCost = gasUsed.mul(effectiveGasPrice)
 
+                  assert.equal(pendingWithdrawal, 0)
                   assert.equal(bidder, user.address, highestBidder)
                   assert.equal(bidVal.toString(), contractBalance, highestBid)
                   assert.equal(balanceETH, startingBalance.sub(bidVal).sub(gasCost).toString())
@@ -216,11 +218,12 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   const resRetTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("30") })
                   const recRetTx = await resRetTx.wait()
-                  bidVal = recRetTx.events[0].args.bid
-                  const transferBool = recRetTx.events[0].args.transfer
+                  const pendingBid = recRetTx.events[0].args.bid
+                  const pendingBidder = recRetTx.events[0].args.bidder
                   const newBid = recRetTx.events[1].args.amount
+                  pendingWithdrawal = await abstractImpulseNFT.getPending(user.address)
                   contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
-                  console.log(`New Bid: ${newBid} Transfer Status: ${transferBool} Bid Returned: ${bidVal}`)
+                  console.log(`Pending Bid: ${pendingBid} For: ${pendingBidder} Pending Bid Added: ${bidVal} Pending Withdrawal Balance: ${pendingWithdrawal}`)
 
                   balanceETH = await ethers.provider.getBalance(user.address)
                   secBalETH = await ethers.provider.getBalance(sec_user.address)
@@ -234,10 +237,90 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const newGasPrice = recRetTx.effectiveGasPrice
                   const newGasCost = newGas.mul(newGasPrice)
 
-                  assert.equal(contractBalance, newBid.toString())
-                  assert.equal(balanceETH.toString(), startingBalance.sub(gasCost).toString())
+                  assert.equal(pendingWithdrawal, parseEther("15").toString())
+                  assert.equal(contractBalance.toString(), newBid.add(pendingBid).toString())
+                  assert.equal(balanceETH.toString(), startingBalance.sub(bidVal).sub(gasCost).toString())
                   assert.equal(secBalETH.toString(), startingBalance.sub(newBid).sub(newGasCost).toString())
-                  await expect(resRetTx).to.emit(abstractImpulseNFT, `NFT_LastBidReturned`)
+                  await expect(resRetTx).to.emit(abstractImpulseNFT, `NFT_AddedPendingBidsForWithdrawal`)
+
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  const respTx = await abstractImpulseInstance.withdrawPending()
+                  const recpTx = await respTx.wait()
+                  const firstBidderBid = recpTx.events[0].args.bid
+                  const firstBidder = recpTx.events[0].args.bidder
+                  const firstBidderTx = recpTx.events[0].args.transfer
+                  contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
+                  balanceETH = await ethers.provider.getBalance(user.address)
+                  console.log(`Pending Bid: ${firstBidderBid} Has Been Returned To: ${firstBidder} Transfer: ${firstBidderTx}`)
+
+                  const newestGas = recpTx.gasUsed
+                  const newestGasPrice = recpTx.effectiveGasPrice
+                  const newestGasCost = newestGas.mul(newestGasPrice)
+
+                  assert.equal(firstBidderBid.toString(), bidVal.toString())
+                  assert.equal(firstBidder, user.address)
+                  assert.equal(firstBidderTx, true)
+                  assert.equal(contractBalance, parseEther("30").toString())
+                  assert.equal(balanceETH.toString(), startingBalance.sub(gasCost).sub(newestGasCost).toString())
+                  await expect(respTx).to.emit(abstractImpulseNFT, `NFT_PendingBidsWithdrawal`)
+              })
+          })
+          describe("Withdraw Pending", () => {
+              beforeEach(async () => {
+                  user = accounts[3]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  await abstractImpulseNFT.mintNFT("SomeNFT")
+                  await abstractImpulseNFT.mintNFT("SomeOtherNFT")
+              })
+              it("It reverts if amount to withdraw is 0", async () => {
+                  await expect(abstractImpulseInstance.withdrawPending()).to.be.revertedWith("Abstract__NotEnoughETH")
+              })
+              it("It reverts if transaction fails and keep pending amount to withdraw", async () => {})
+              it("It withdraws bids from multiple tokens", async () => {
+                  const startingContractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
+                  const startingUserBalance = await ethers.provider.getBalance(user.address)
+
+                  assert.equal(startingContractBalance, 0)
+                  assert.equal(startingUserBalance, parseEther("10000").toString())
+
+                  const firstResTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("10") })
+                  const firstRecTx = await firstResTx.wait()
+
+                  const gas = firstRecTx.gasUsed
+                  const gasPrice = firstRecTx.effectiveGasPrice
+                  const gasCost = gas.mul(gasPrice)
+
+                  const anotherBidder = accounts[4]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(anotherBidder)
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("20") })
+
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  const secondResTx = await abstractImpulseInstance.placeBid(1, { value: parseEther("16") })
+                  const secondRecTx = await secondResTx.wait()
+
+                  const newGas = secondRecTx.gasUsed
+                  const newGasPrice = secondRecTx.effectiveGasPrice
+                  const newGasCost = newGas.mul(newGasPrice)
+
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(anotherBidder)
+                  await abstractImpulseInstance.placeBid(1, { value: parseEther("26") })
+                  const midContractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
+
+                  assert.equal(midContractBalance, parseEther("72").toString())
+
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  const thirdResTx = await abstractImpulseInstance.withdrawPending()
+                  const thirdRecTx = await thirdResTx.wait()
+
+                  const newestGas = thirdRecTx.gasUsed
+                  const newestGasPrice = thirdRecTx.effectiveGasPrice
+                  const newestGasCost = newestGas.mul(newestGasPrice)
+
+                  const postContractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
+                  const finalUserBalance = await ethers.provider.getBalance(user.address)
+
+                  assert.equal(postContractBalance, parseEther("46").toString())
+                  assert.equal(finalUserBalance, startingUserBalance.sub(gasCost).sub(newGasCost).sub(newestGasCost).toString())
               })
           })
           describe("Save And Read TokenURI", () => {
@@ -290,6 +373,33 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(
                       abstractImpulseNFT["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
                   ).to.emit(abstractImpulseNFT, "Transfer")
+              })
+          })
+          describe("Functions not allowed to be used by owner for lower bidder", () => {
+              beforeEach(async () => {
+                  user = accounts[3]
+                  const anotherBidder = accounts[4]
+                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
+                  const abstractImpulseInstanceSecond = await abstractImpulseNFT.connect(anotherBidder)
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await abstractImpulseInstanceSecond.placeBid(0, { value: parseEther("0.2") })
+                  await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
+                  await network.provider.send("evm_mine", [])
+
+                  tokenId = (await abstractImpulseNFT.totalSupply()) - 1
+              })
+              it("It is not allowed to approve or transfer to other address than highest bidder", async () => {
+                  await expect(abstractImpulseNFT.approve(user.address, tokenId)).to.be.revertedWith("Abstract__AddressIsNotHighestBidder")
+                  await expect(abstractImpulseNFT.transferFrom(deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "Abstract__AddressIsNotHighestBidder"
+                  )
+                  await expect(
+                      abstractImpulseNFT["safeTransferFrom(address,address,uint256,bytes)"](deployer.address, user.address, tokenId, user.address)
+                  ).to.be.revertedWith("Abstract__AddressIsNotHighestBidder")
+                  await expect(abstractImpulseNFT["safeTransferFrom(address,address,uint256)"](deployer.address, user.address, tokenId)).to.be.revertedWith(
+                      "Abstract__AddressIsNotHighestBidder"
+                  )
               })
           })
           describe("Functions not allowed to use: approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()", () => {
