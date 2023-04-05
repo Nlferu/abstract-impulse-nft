@@ -16,7 +16,7 @@ error Abstract__AuctionFinishedForThisNFT();
 error Abstract__AuctionStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 
-contract AbstractImpulseNFTAlt is ERC721A, ReentrancyGuard, Ownable {
+contract AbstractImpulseNFTOld is ERC721A, ReentrancyGuard, Ownable {
     // NFT Structs
     struct Auction {
         string s_tokenURIs;
