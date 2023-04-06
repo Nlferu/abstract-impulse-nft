@@ -185,6 +185,11 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         emit NFT_WithdrawCompleted(auction.s_tokenIdToBid, success);
     }
 
+    /**
+     * @dev Create Function To Withdraw Pending Bids If Not Claimed After 10 Days
+     */
+    function withdrawUnclaimedBids(address bidder) public onlyOwner {}
+
     function renewAuction(uint256 tokenId) public onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
         if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
