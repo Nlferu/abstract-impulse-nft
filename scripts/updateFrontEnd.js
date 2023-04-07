@@ -3,9 +3,9 @@ const frontEndContractsFile = "../no-patrick-code/constants/networkMapping.json"
 const frontEndAbiLocation = "../no-patrick-code/constants/"
 const fs = require("fs")
 
-module.exports = async function () {
+async function updateFrontEnd() {
     if (process.env.UPDATE_FRONT_END) {
-        console.log("updating front end...")
+        console.log("Updating front end...")
         await updateContractAddresses()
         await updateAbi()
     }
@@ -30,4 +30,9 @@ async function updateContractAddresses() {
     fs.writeFileSync(frontEndContractsFile, JSON.stringify(contractAddresses))
 }
 
-module.exports.tags = ["all", "frontend"]
+updateFrontEnd()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error)
+        process.exit(1)
+    })
