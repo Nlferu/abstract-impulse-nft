@@ -560,45 +560,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(ownerBalance.toString(), startingOwnerBalance.add(firstBid).add(secondBid).sub(gasCost).sub(newGasCost).toString())
               })
           })
-          describe("Withdraw Money", () => {
-              beforeEach(async () => {
-                  tokenId = 0
-                  user = accounts[1]
-                  abstractImpulseInstance = await abstractImpulseNFT.connect(user)
-              })
-              it("It is usable for only owner and tokenId's received bid and only if auction already finished and emit's (bid, transfer)", async () => {
-                  // Below is also included in this test
-                  // it("It withdraw's money back to owner for each tokenId and emit's (bid, transfer)")
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
-                  await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
-                  await network.provider.send("evm_mine", [])
-                  const contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
-
-                  const responseTx = await abstractImpulseNFT.withdrawMoney(tokenId)
-                  const receiptTx = await responseTx.wait()
-                  const bid = receiptTx.events[0].args.amount
-                  const transfer = receiptTx.events[0].args.transfer
-
-                  assert.equal(transfer, true)
-                  assert.equal(contractBalance, bid.toString())
-                  await expect(abstractImpulseInstance.withdrawMoney(tokenId)).to.be.revertedWith("Ownable: caller is not the owner")
-                  await expect(responseTx).to.emit(abstractImpulseNFT, "NFT_WithdrawCompleted")
-              })
-              it("It reverts if given tokenId doesn't exist", async () => {
-                  await expect(abstractImpulseNFT.withdrawMoney(tokenId)).to.be.revertedWith("Abstract__NotExistingTokenId")
-              })
-              it("It reverts if auction not finished for given tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
-                  await expect(abstractImpulseNFT.withdrawMoney(tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
-              })
-              it("It reverts if there was no bid received for given tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
-                  await network.provider.send("evm_increaseTime", [AUCTION_DURATION])
-                  await network.provider.send("evm_mine", [])
-                  await expect(abstractImpulseNFT.withdrawMoney(tokenId)).to.be.revertedWith("Abstract__NoBidReceivedForThisNFT")
-              })
-          })
           describe("Renew Auction", () => {
               beforeEach(async () => {
                   tokenId = 0

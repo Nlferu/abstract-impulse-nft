@@ -175,21 +175,14 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
      * @dev We are able to withdraw money from contract only for closed biddings
      * If we leave it as "private" we should remove all "if" and modifiers as acceptBid is checking those
      */
-    function withdrawMoney(uint256 tokenId) private onlyOwner biddingStateCheck(tokenId) {
+    function withdrawMoney(uint256 tokenId) private onlyOwner {
         Auction storage auction = auctions[tokenId];
-        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
-        if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         (bool success, ) = msg.sender.call{value: auction.s_tokenIdToBid}("");
         if (!success) revert Abstract__TransferFailed();
 
         emit NFT_WithdrawCompleted(auction.s_tokenIdToBid, success);
     }
-
-    /**
-     * @dev Create Function To Withdraw Pending Bids If Not Claimed After 10 Days
-     */
-    function withdrawUnclaimedBids(address bidder) external onlyOwner {}
 
     function renewAuction(uint256 tokenId) external onlyOwner biddingStateCheck(tokenId) {
         Auction storage auction = auctions[tokenId];
@@ -209,15 +202,9 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         _;
     }
 
-    // Function to be deleted
-    // function getLogic(uint256 tokenId) external view returns (bool) {
-    //     Auction storage auction = auctions[tokenId];
-    //     return auction.s_tokenIdToBidder == address(0);
+    // function getAuctionDetails(uint256 tokenId) external view returns (Auction memory) {
+    //     return auctions[tokenId];
     // }
-
-    function getAuctionDetails(uint256 tokenId) external view returns (Auction memory) {
-        return auctions[tokenId];
-    }
 
     function getHighestBidder(uint256 tokenId) external view returns (address) {
         Auction storage auction = auctions[tokenId];
