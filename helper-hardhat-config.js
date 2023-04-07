@@ -13,7 +13,7 @@ const networkConfig = {
     },
 }
 
-const motherContract = "0x554F6d63d899DB2ef4644CB29593A8d6659BF1cB"
+const motherContract = "0xaBC27F4fa9dae4829575A3DF7958b9d80872c8a8"
 
 const developmentChains = ["hardhat", "localhost"]
 const DECIMALS = "18"

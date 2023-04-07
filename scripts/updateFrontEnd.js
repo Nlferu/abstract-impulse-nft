@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat")
+const { developmentChains, motherContract } = require("../helper-hardhat-config")
 const frontEndContractsFile = "../no-patrick-code/constants/networkMapping.json"
 const frontEndAbiLocation = "../no-patrick-code/constants/"
 const fs = require("fs")
@@ -17,7 +18,7 @@ async function updateAbi() {
 }
 
 async function updateContractAddresses() {
-    const abstractImpulseNft = await ethers.getContract("AbstractImpulseNFT")
+    const abstractImpulseNft = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
     const chainId = network.config.chainId.toString()
     const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractsFile, "utf8"))
     if (chainId in contractAddresses) {
@@ -30,9 +31,13 @@ async function updateContractAddresses() {
     fs.writeFileSync(frontEndContractsFile, JSON.stringify(contractAddresses))
 }
 
-updateFrontEnd()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error)
-        process.exit(1)
-    })
+if (!developmentChains.includes(network.name)) {
+    updateFrontEnd()
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error(error)
+            process.exit(1)
+        })
+} else {
+    console.log("This script is allowed only for Goerli, Sepolia or Mainnet")
+}
