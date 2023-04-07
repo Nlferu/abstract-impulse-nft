@@ -16,7 +16,7 @@ error Abstract__AuctionFinishedForThisNFT();
 error Abstract__AuctionStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 
-contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
+contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     // NFT Structs
     struct Auction {
         string s_tokenURIs;
@@ -60,7 +60,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
     }
 
-    /** @dev Instead of transferring money back to outbidded addres, give them opportunity to withdraw money */
+    /** @dev Instead of transferring money back to outbidded address, give them opportunity to withdraw money */
     function placeBid(uint256 tokenId) public payable nonReentrant {
         Auction storage auction = auctions[tokenId];
         // Make sure the contract owner cannot bid
@@ -153,7 +153,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard, Ownable {
         emit NFT_BidAccepted(tokenId);
     }
 
-    function withdrawPending() public payable {
+    function withdrawPending() public payable nonReentrant {
         uint256 amount = pendingReturns[msg.sender];
 
         if (amount > 0) {
