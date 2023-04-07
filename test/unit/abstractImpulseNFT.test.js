@@ -195,7 +195,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   console.log(`Bid Value: ${bidVal.toString()} WEI Bidder: ${bidder} tokenId: ${tokenId} Time Left: ${time}`)
 
-                  let pendingWithdrawal = await abstractImpulseNFT.getPending(user.address)
+                  let pendingWithdrawal = await abstractImpulseNFT.getPendingReturns(user.address)
                   let contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
                   let balanceETH = await ethers.provider.getBalance(user.address)
                   let secBalETH = await ethers.provider.getBalance(sec_user.address)
@@ -221,7 +221,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const pendingBid = recRetTx.events[0].args.bid
                   const pendingBidder = recRetTx.events[0].args.bidder
                   const newBid = recRetTx.events[1].args.amount
-                  pendingWithdrawal = await abstractImpulseNFT.getPending(user.address)
+                  pendingWithdrawal = await abstractImpulseNFT.getPendingReturns(user.address)
                   contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
                   console.log(`Pending Bid: ${pendingBid} For: ${pendingBidder} Pending Bid Added: ${bidVal} Pending Withdrawal Balance: ${pendingWithdrawal}`)
 
