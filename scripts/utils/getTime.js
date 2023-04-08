@@ -5,11 +5,9 @@ const prompt = require("prompt-sync")()
 let tokenId = prompt("TokenId: ")
 
 async function getTime() {
-    const { deployer } = await getNamedAccounts()
+    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
 
-    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
-
-    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${await abstractImpulseNFT.owner()}`)
 
     const time = await abstractImpulseNFT.getTime(tokenId)
 

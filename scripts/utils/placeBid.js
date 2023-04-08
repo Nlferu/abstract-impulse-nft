@@ -6,11 +6,9 @@ const prompt = require("prompt-sync")()
 let tokenId = prompt("TokenId: ")
 
 async function placeBid() {
-    const { deployer } = await getNamedAccounts()
+    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
 
-    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
-
-    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} As: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${await abstractImpulseNFT.owner()}`)
 
     const responseTx = await abstractImpulseNFT.placeBid(tokenId, { value: parseEther("0.11") })
     const receiptTx = await responseTx.wait()

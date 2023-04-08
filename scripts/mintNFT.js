@@ -5,11 +5,9 @@ const prompt = require("prompt-sync")()
 let tokenURI = prompt("TokenURI of new NFT: ")
 
 async function mintNFT() {
-    const { deployer } = await getNamedAccounts()
+    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
 
-    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract, deployer)
-
-    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${deployer}`)
+    console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${await abstractImpulseNFT.owner()}`)
 
     const responseTx = await abstractImpulseNFT.mintNFT(tokenURI)
     const receiptTx = await responseTx.wait()

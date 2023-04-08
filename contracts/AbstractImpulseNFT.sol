@@ -60,6 +60,8 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
     }
 
+    /** @dev Consider BuyOut Option Too */
+
     /** @dev Instead of transferring money back to outbidded address, give them opportunity to withdraw money */
     function placeBid(uint256 tokenId) external payable nonReentrant {
         Auction storage auction = auctions[tokenId];
