@@ -1,4 +1,4 @@
-const { ethers, getNamedAccounts, network } = require("hardhat")
+const { ethers, network } = require("hardhat")
 const { developmentChains, motherContract } = require("../helper-hardhat-config")
 const prompt = require("prompt-sync")()
 
