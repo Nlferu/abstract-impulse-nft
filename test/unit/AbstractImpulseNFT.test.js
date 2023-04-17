@@ -6,9 +6,10 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Abstract NFT Unit Tests", function () {
-          let abstractImpulseNFT, abstractImpulseInstance, resMintTx, recMintTx, tokenId, deployer, user
+          let abstractImpulseNFT, abstractImpulseInstance, resMintTx, recMintTx, tokenId, deployer, user, auctionDuration
 
           beforeEach(async () => {
+              auctionDuration = 30
               accounts = await ethers.getSigners()
               deployer = accounts[0]
               // Deploying AbstractImpulseNFT
@@ -87,7 +88,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
           describe("Mint NFT", () => {
               beforeEach(async () => {
                   // Minting NFT
-                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx")
+                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
                   recMintTx = await resMintTx.wait()
                   tokenId = recMintTx.events[1].args.tokenId
               })
@@ -99,7 +100,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   assert.equal(tokenCounter, 1)
                   assert.equal(minter == deployer.address, tokenId == 0)
-                  await expect(abstractImpulseNFT.mintNFT("tokenURIx")).to.emit(abstractImpulseNFT, `NFT_Minted`)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_Minted`)
               })
               it("It assigns correct tokenURI to created NFT and emit's (tokenURI)", async function () {
                   const tokenURI = recMintTx.events[2].args.uri
@@ -108,7 +109,18 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const setTokenURI = await abstractImpulseNFT.tokenURI(tokenId)
 
                   assert.equal(tokenURI, setTokenURI)
-                  await expect(abstractImpulseNFT.mintNFT("tokenURIx")).to.emit(abstractImpulseNFT, `NFT_SetTokenURI`)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_SetTokenURI`)
+              })
+              it("It assigns correct auction duration per tokenId and emit's (time)", async () => {
+                  auctionDuration = 180
+                  const mintResponseTx = await abstractImpulseNFT.mintNFT("tokenURI_T", auctionDuration)
+                  const mintReceiptTx = await mintResponseTx.wait()
+                  const time = mintReceiptTx.events[3].args.time
+                  tokenId = mintReceiptTx.events[3].args.tokenId
+
+                  assert.equal(tokenId, 1)
+                  assert.equal(time, auctionDuration)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIz", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`)
               })
               it("It set's correct starting price for created NFT", async function () {
                   const price = await abstractImpulseNFT.getHighestBid(tokenId)
@@ -128,14 +140,14 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   // In order to use above account we have to first connect it to our mother contract instance
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
 
-                  await expect(abstractImpulseInstance.mintNFT("tokenURIxx")).to.be.revertedWith("Ownable: caller is not the owner")
+                  await expect(abstractImpulseInstance.mintNFT("tokenURIxx", auctionDuration)).to.be.revertedWith("Ownable: caller is not the owner")
               })
           })
           // --------------------------------------------------------------------------------------------------------------------------
           describe("Place Bid", () => {
               beforeEach(async () => {
                   // Minting NFT
-                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx")
+                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
                   recMintTx = await resMintTx.wait()
                   tokenId = recMintTx.events[1].args.tokenId
 
@@ -170,7 +182,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   console.log(`Auction Time For ${tokenId} NFT Left: ${time} After New Bid`)
 
                   assert.equal(auctionTime.toString(), time.toString()) // 120 + 29 as 1s passed after bidding
-                  await expect(resBidTx).to.emit(abstractImpulseNFT, `NFT_AuctionExtended`)
+                  await expect(resBidTx).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`)
               })
               it("It reverts if amount sent is less than start price for given tokenId if first bid", async function () {
                   await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.09") })).to.be.revertedWith("Abstract__NotEnoughETH")
@@ -269,8 +281,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               beforeEach(async () => {
                   user = accounts[3]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
-                  await abstractImpulseNFT.mintNFT("SomeNFT")
-                  await abstractImpulseNFT.mintNFT("SomeOtherNFT")
+                  await abstractImpulseNFT.mintNFT("SomeNFT", auctionDuration)
+                  await abstractImpulseNFT.mintNFT("SomeOtherNFT", auctionDuration)
               })
               it("It reverts if amount to withdraw is 0", async () => {
                   await expect(abstractImpulseInstance.withdrawPending()).to.be.revertedWith("Abstract__NotEnoughETH")
@@ -325,8 +337,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
           })
           describe("Save And Read TokenURI", () => {
               it("It returns correct tokenURI per tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
-                  await abstractImpulseNFT.mintNFT("SecondTokenURI")
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
+                  await abstractImpulseNFT.mintNFT("SecondTokenURI", auctionDuration)
 
                   let tokenURI = await abstractImpulseNFT.tokenURI(0)
                   assert.equal(tokenURI, "FirstTokenURI")
@@ -338,7 +350,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               beforeEach(async () => {
                   user = accounts[3]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
-                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
@@ -381,7 +393,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const anotherBidder = accounts[4]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
                   const abstractImpulseInstanceSecond = await abstractImpulseNFT.connect(anotherBidder)
-                  await abstractImpulseNFT.mintNFT("FirstTokenURI")
+                  await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
                   await abstractImpulseInstanceSecond.placeBid(0, { value: parseEther("0.2") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
@@ -406,7 +418,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               beforeEach(async () => {
                   user = accounts[3]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
               })
               it("It is not allowed to use any of above functions for tokenId's for which bidding is still ongoing", async () => {
@@ -452,7 +464,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               it("It is usable for only owner and tokenId's received bid and only if auction already finished and emits three confirmations", async () => {
                   // Below is also included in this test
                   // it("It approve's highest bidding address per tokenId to claim NFT and emit's (owner, approvedAddress, tokenId)")
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
@@ -486,11 +498,11 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseNFT.acceptBid(tokenId)).to.be.revertedWith("Abstract__NotExistingTokenId")
               })
               it("It reverts if auction not finished for given tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await expect(abstractImpulseNFT.acceptBid(tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
               })
               it("It reverts if there was no bid received for given tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION])
                   await network.provider.send("evm_mine", [])
                   await expect(abstractImpulseNFT.acceptBid(tokenId)).to.be.revertedWith("Abstract__NoBidReceivedForThisNFT")
@@ -501,8 +513,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   assert.equal(contractBalance, 0)
 
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
-                  await abstractImpulseNFT.mintNFT("Tokki")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
+                  await abstractImpulseNFT.mintNFT("Tokki", auctionDuration)
                   const startingOwnerBalance = await ethers.provider.getBalance(deployer.address)
                   let resTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("7") })
                   let recTx = await resTx.wait()
@@ -567,7 +579,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               it("It is usable only for tokenId's for which auction already finished and without bid received and can be called by owner only", async () => {
                   // Below is also included in this test
                   // it("It renew and sets correct auction time for given tokenId and emit's (time, tokenId)"
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION])
                   await network.provider.send("evm_mine", [])
 
@@ -585,19 +597,19 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   console.log(`Time Left After Renewal: ${getTime}`)
 
                   assert.equal(getTime.toString(), time.toString())
-                  await expect(resTx).to.emit(abstractImpulseNFT, "NFT_AuctionExtended")
+                  await expect(resTx).to.emit(abstractImpulseNFT, "NFT_AuctionTimeUpdated")
               })
               it("It reverts if given tokenId doesn't exist", async () => {
                   await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__NotExistingTokenId")
               })
               it("It reverts if auction not finished for given tokenId", async () => {
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
               })
               it("It reverts if there was bid received for given tokenId", async () => {
                   user = accounts[1]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
 
                   await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
@@ -613,7 +625,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
               it("It displays correct data", async () => {
                   await expect(abstractImpulseNFT.getTime(tokenId)).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
 
-                  await abstractImpulseNFT.mintNFT("TokenURI_X")
+                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
 
                   await expect(abstractImpulseNFT.getTime(tokenId)).to.not.reverted
               })

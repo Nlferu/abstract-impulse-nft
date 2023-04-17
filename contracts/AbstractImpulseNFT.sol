@@ -23,12 +23,12 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         uint256 s_tokenIdToBid;
         address s_tokenIdToBidder;
         uint256 s_tokenIdToAuctionStart;
+        uint256 s_tokenIdToAuctionDuration;
     }
 
     // NFT Variables
     uint256 constant minBid = 0.01 ether;
     uint256 constant startPrice = 0.1 ether;
-    uint256 constant auctionDuration = 1 weeks;
 
     // NFT Mappings
     mapping(uint256 => Auction) private auctions;
@@ -38,15 +38,15 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     event NFT_BidAccepted(uint256 indexed tokenId);
     event NFT_SetTokenURI(string uri, uint256 indexed tokenId);
     event NFT_Minted(address indexed minter, uint256 indexed tokenId);
-    event NFT_AuctionExtended(uint256 indexed time, uint256 indexed tokenId);
     event NFT_WithdrawCompleted(uint256 indexed amount, bool indexed transfer);
+    event NFT_AuctionTimeUpdated(uint256 indexed time, uint256 indexed tokenId);
     event NFT_AddedPendingBidsForWithdrawal(uint256 indexed bid, address indexed bidder);
     event NFT_BidPlaced(uint256 indexed amount, address indexed bidder, uint256 indexed tokenId);
     event NFT_PendingBidsWithdrawal(uint256 indexed bid, address indexed bidder, bool indexed transfer);
 
     constructor() ERC721A("Abstract Impulse", "AIN") {}
 
-    function mintNFT(string memory externalTokenURI) external onlyOwner {
+    function mintNFT(string memory externalTokenURI, uint256 auctionDuration) external onlyOwner {
         uint256 newTokenId = totalSupply();
         Auction storage auction = auctions[newTokenId];
 
@@ -55,14 +55,14 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         auction.s_tokenIdToBid = startPrice;
         auction.s_tokenURIs = externalTokenURI;
         auction.s_tokenIdToAuctionStart = block.timestamp;
+        auction.s_tokenIdToAuctionDuration = auctionDuration;
 
         emit NFT_Minted(msg.sender, newTokenId);
         emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
+        emit NFT_AuctionTimeUpdated(auctionDuration, newTokenId);
     }
 
     /** @dev Consider BuyOut Option Too */
-
-    /** @dev Instead of transferring money back to outbidded address, give them opportunity to withdraw money */
     function placeBid(uint256 tokenId) external payable nonReentrant {
         Auction storage auction = auctions[tokenId];
         // Make sure the contract owner cannot bid
@@ -72,14 +72,14 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
 
         // Check if the auction is still ongoing
-        if ((auction.s_tokenIdToAuctionStart + auctionDuration) < block.timestamp) {
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) < block.timestamp) {
             revert Abstract__AuctionFinishedForThisNFT();
         }
 
         // Extend the auction by 5 minutes if it's close to ending
-        if ((auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp) < 2 minutes) {
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp) < 2 minutes) {
             auction.s_tokenIdToAuctionStart += 2 minutes;
-            emit NFT_AuctionExtended(auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp, tokenId);
+            emit NFT_AuctionTimeUpdated(auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp, tokenId);
         }
 
         // If there were no previous bids
@@ -193,20 +193,16 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
 
         auction.s_tokenIdToAuctionStart = block.timestamp;
 
-        emit NFT_AuctionExtended((auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp), tokenId);
+        emit NFT_AuctionTimeUpdated((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp), tokenId);
     }
 
     modifier biddingStateCheck(uint256 tokenId) {
         Auction storage auction = auctions[tokenId];
-        if ((auction.s_tokenIdToAuctionStart + auctionDuration) > block.timestamp) {
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
             revert Abstract__AuctionStillOpenForThisNFT();
         }
         _;
     }
-
-    // function getAuctionDetails(uint256 tokenId) external view returns (Auction memory) {
-    //     return auctions[tokenId];
-    // }
 
     function getHighestBidder(uint256 tokenId) external view returns (address) {
         Auction storage auction = auctions[tokenId];
@@ -220,11 +216,11 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
 
     function getTime(uint256 tokenId) external view returns (uint256) {
         Auction storage auction = auctions[tokenId];
-        if ((auction.s_tokenIdToAuctionStart + auctionDuration) < block.timestamp) {
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) < block.timestamp) {
             revert Abstract__AuctionFinishedForThisNFT();
         }
 
-        return auction.s_tokenIdToAuctionStart + auctionDuration - block.timestamp;
+        return auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp;
     }
 
     function getPendingReturns(address bidder) external view returns (uint256) {
