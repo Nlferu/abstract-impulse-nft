@@ -10,6 +10,7 @@ error Abstract__TransferFailed();
 error Abstract__FunctionDisabled();
 error Abstract__NotExistingTokenId();
 error Abstract__BidReceivedForThisNFT();
+error Abstract__AuctionDurationTooShort();
 error Abstract__NoBidReceivedForThisNFT();
 error Abstract__AddressIsNotHighestBidder();
 error Abstract__AuctionFinishedForThisNFT();
@@ -47,6 +48,8 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     constructor() ERC721A("Abstract Impulse", "AIN") {}
 
     function mintNFT(string memory externalTokenURI, uint256 auctionDuration) external onlyOwner {
+        if (auctionDuration < 10) revert Abstract__AuctionDurationTooShort();
+
         uint256 newTokenId = totalSupply();
         Auction storage auction = auctions[newTokenId];
 
@@ -216,11 +219,10 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
 
     function getTime(uint256 tokenId) external view returns (uint256) {
         Auction storage auction = auctions[tokenId];
-        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) < block.timestamp) {
-            revert Abstract__AuctionFinishedForThisNFT();
-        }
-
-        return auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp;
+        return
+            ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) < block.timestamp)
+                ? 0
+                : (auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp);
     }
 
     function getPendingReturns(address bidder) external view returns (uint256) {

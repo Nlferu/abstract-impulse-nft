@@ -92,6 +92,9 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   recMintTx = await resMintTx.wait()
                   tokenId = recMintTx.events[1].args.tokenId
               })
+              it("It reverts if auction duration argument is too low", async () => {
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIxx", 9)).to.be.revertedWith("Abstract__AuctionDurationTooShort")
+              })
               it("It creates new tokenId (NFT) and emit's (minter, tokenId)", async function () {
                   // We have to use 1 index as "_mint" function has index 0
                   const minter = recMintTx.events[1].args.minter
@@ -623,7 +626,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   tokenId = 0
               })
               it("It displays correct data", async () => {
-                  await expect(abstractImpulseNFT.getTime(tokenId)).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
+                  assert.equal(await abstractImpulseNFT.getTime(tokenId), 0)
 
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
 
