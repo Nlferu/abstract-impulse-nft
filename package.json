@@ -28,6 +28,7 @@
     "prompt-sync": "^4.2.0"
   },
   "scripts": {
+    "slither": "slither . --solc-remaps '@=node_modules/@' --exclude naming-convention,external-function,low-level-calls",
     "test": "hardhat test",
     "test-staging": "hardhat test",
     "coverage": "hardhat coverage"
