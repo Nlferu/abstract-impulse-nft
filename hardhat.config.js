@@ -52,10 +52,10 @@ module.exports = {
                 version: "0.8.4",
             },
             {
-                version: "0.8.8",
+                version: "0.8.7",
             },
             {
-                version: "0.8.17",
+                version: "0.8.18",
             },
         ],
     },
