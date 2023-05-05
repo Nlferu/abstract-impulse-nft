@@ -20,9 +20,9 @@ error Abstract__ContractOwnerIsNotAllowedToBid();
 contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     // NFT Structs
     struct Auction {
-        string s_tokenURIs;
         uint256 s_tokenIdToBid;
         address s_tokenIdToBidder;
+        string s_tokenIdToTokenURI;
         uint256 s_tokenIdToAuctionStart;
         uint256 s_tokenIdToAuctionDuration;
     }
@@ -56,12 +56,12 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         _mint(msg.sender, 1);
 
         auction.s_tokenIdToBid = startPrice;
-        auction.s_tokenURIs = externalTokenURI;
+        auction.s_tokenIdToTokenURI = externalTokenURI;
         auction.s_tokenIdToAuctionStart = block.timestamp;
         auction.s_tokenIdToAuctionDuration = auctionDuration;
 
         emit NFT_Minted(msg.sender, newTokenId);
-        emit NFT_SetTokenURI(auction.s_tokenURIs, newTokenId);
+        emit NFT_SetTokenURI(auction.s_tokenIdToTokenURI, newTokenId);
         emit NFT_AuctionTimeUpdated(auctionDuration, newTokenId);
     }
 
@@ -109,7 +109,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         Auction storage auction = auctions[tokenId];
-        return auction.s_tokenURIs;
+        return auction.s_tokenIdToTokenURI;
     }
 
     function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
