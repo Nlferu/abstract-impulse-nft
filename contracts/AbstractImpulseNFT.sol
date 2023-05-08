@@ -88,9 +88,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         // If there were no previous bids
         if (auction.s_tokenIdToBidder == address(0)) {
             // Check if the bid amount is high enough
-            if (msg.value < startPrice) {
-                revert Abstract__NotEnoughETH();
-            }
+            if (msg.value < startPrice) revert Abstract__NotEnoughETH();
         }
         // If there were previous bids
         else {
