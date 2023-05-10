@@ -33,7 +33,7 @@ async function handleTokenUris() {
 
         // Editing Metadata
         tokenUriMetadata.name = files[imageUploadResponseIndex].replace(".jpg", "")
-        tokenUriMetadata.description = `Unique ${tokenUriMetadata.name} art`
+        tokenUriMetadata.description = `Unique ${tokenUriMetadata.name} hand painted piece of art`
         tokenUriMetadata.image = `https://ipfs.io/ipfs/${imageUploadResponses[imageUploadResponseIndex].IpfsHash}`
         console.log(`Uploading ${tokenUriMetadata.name} metadata...`)
 

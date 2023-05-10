@@ -1,7 +1,7 @@
 // We can name all parameters as we want!
 const metadataTemplate = {
     name: "",
-    author: "",
+    author: "Jessica Gobin",
     description: "",
     image: "",
     date: new Date(),
