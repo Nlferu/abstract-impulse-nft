@@ -69,8 +69,11 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                * It renew and sets correct auction time for given tokenId and emit's (time, tokenId) ✔️
             10. getters()
                * It displays correct data ✔️
+
+            * @dev To be removed once done!
+
             */
-          // --------------------------------------------------------------------------------------------------------------------------
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Constructor", () => {
               it("Initializes the NFT Correctly.", async () => {
                   const owner = await abstractImpulseNFT.owner()
@@ -84,7 +87,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(tokenCounter.toString(), "0")
               })
           })
-          // --------------------------------------------------------------------------------------------------------------------------
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Mint NFT", () => {
               beforeEach(async () => {
                   // Minting NFT
@@ -146,7 +149,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseInstance.mintNFT("tokenURIxx", auctionDuration)).to.be.revertedWith("Ownable: caller is not the owner")
               })
           })
-          // --------------------------------------------------------------------------------------------------------------------------
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Place Bid", () => {
               beforeEach(async () => {
                   // Minting NFT
@@ -280,6 +283,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(respTx).to.emit(abstractImpulseNFT, `NFT_PendingBidsWithdrawal`)
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Withdraw Pending", () => {
               beforeEach(async () => {
                   user = accounts[3]
@@ -338,6 +342,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(finalUserBalance, startingUserBalance.sub(gasCost).sub(newGasCost).sub(newestGasCost).toString())
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Save And Read TokenURI", () => {
               it("It returns correct tokenURI per tokenId", async () => {
                   await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
@@ -349,6 +354,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(tokenURI, "SecondTokenURI")
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Functions allowed to use: approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()", () => {
               beforeEach(async () => {
                   user = accounts[3]
@@ -390,6 +396,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   ).to.emit(abstractImpulseNFT, "Transfer")
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Functions not allowed to be used by owner for lower bidder", () => {
               beforeEach(async () => {
                   user = accounts[3]
@@ -417,6 +424,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   )
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Functions not allowed to use: approve(), transferFrom(), safeTransferFrom(), safeTransferFrom()", () => {
               beforeEach(async () => {
                   user = accounts[3]
@@ -450,6 +458,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   ).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Set Approval For All Function", () => {
               it("It reverts once used", async () => {
                   user = accounts[4]
@@ -458,6 +467,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseNFT.setApprovalForAll(user.address, true)).to.be.revertedWith("Abstract__FunctionDisabled")
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Accept Bid", () => {
               beforeEach(async () => {
                   tokenId = 0
@@ -575,6 +585,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   assert.equal(ownerBalance.toString(), startingOwnerBalance.add(firstBid).add(secondBid).sub(gasCost).sub(newGasCost).toString())
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Renew Auction", () => {
               beforeEach(async () => {
                   tokenId = 0
@@ -621,6 +632,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__BidReceivedForThisNFT")
               })
           })
+          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
           describe("Getters", () => {
               beforeEach(async () => {
                   tokenId = 0
