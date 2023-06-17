@@ -47,7 +47,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
 
     constructor() ERC721A("Abstract Impulse", "AIN") {}
 
-    function mintNFT(string memory externalTokenURI, uint256 auctionDuration) external onlyOwner {
+    function mintNFT(string calldata externalTokenURI, uint256 auctionDuration) external onlyOwner {
         if (auctionDuration < 10) revert Abstract__AuctionDurationTooShort();
 
         uint256 newTokenId = totalSupply();
