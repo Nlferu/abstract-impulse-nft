@@ -28,8 +28,8 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     }
 
     // NFT Variables
-    uint256 constant minBid = 0.01 ether;
-    uint256 constant startPrice = 0.5 ether;
+    uint256 private constant minBid = 0.01 ether;
+    uint256 private constant startPrice = 0.5 ether;
 
     // NFT Mappings
     mapping(uint256 => Auction) private auctions;
