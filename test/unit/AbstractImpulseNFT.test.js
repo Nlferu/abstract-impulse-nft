@@ -133,7 +133,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   console.log(`Price: ${price}`)
 
                   // 0.1 ETH
-                  assert.equal(price.toString(), parseEther("0.1").toString())
+                  assert.equal(price.toString(), parseEther("0.5").toString())
               })
               it("It set's auction starting time for created NFT", async function () {
                   const time = await abstractImpulseNFT.getTime(0)
@@ -162,10 +162,10 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
               })
               it("It reverts if called by contract owner", async function () {
-                  await expect(abstractImpulseNFT.placeBid(0, { value: parseEther("0.15") })).to.be.revertedWith("Abstract__ContractOwnerIsNotAllowedToBid")
+                  await expect(abstractImpulseNFT.placeBid(0, { value: parseEther("0.5") })).to.be.revertedWith("Abstract__ContractOwnerIsNotAllowedToBid")
               })
               it("It reverts if tokenId doesn't exist", async function () {
-                  await expect(abstractImpulseInstance.placeBid(1, { value: parseEther("0.15") })).to.be.revertedWith("Abstract__NotExistingTokenId")
+                  await expect(abstractImpulseInstance.placeBid(1, { value: parseEther("0.5") })).to.be.revertedWith("Abstract__NotExistingTokenId")
               })
               it("It reverts if auction already finished for given tokenId", async function () {
                   // Increasing time by 30s
@@ -173,13 +173,13 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   // Mining new block
                   await network.provider.send("evm_mine", [])
 
-                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.15") })).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
+                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
               })
               it("It extends auction time if auction is close to ending and bid is received and emit's time and tokenId", async function () {
                   let auctionTime = await abstractImpulseNFT.getTime(tokenId)
                   console.log(`Auction Time For ${tokenId} NFT Left: ${auctionTime}`)
 
-                  const resBidTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("0.15") })
+                  const resBidTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
                   const recBidTx = await resBidTx.wait()
                   const time = recBidTx.events[0].args.time
                   tokenId = recBidTx.events[0].args.tokenId
@@ -191,11 +191,11 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(resBidTx).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`)
               })
               it("It reverts if amount sent is less than start price for given tokenId if first bid", async function () {
-                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.09") })).to.be.revertedWith("Abstract__NotEnoughETH")
+                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.49") })).to.be.revertedWith("Abstract__NotEnoughETH")
               })
               it("It reverts if amount sent is less than lastest bid plus min bid amount for given tokenId if not first bid", async function () {
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.15") })
-                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.159") })).to.be.revertedWith("Abstract__NotEnoughETH")
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
+                  await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.509") })).to.be.revertedWith("Abstract__NotEnoughETH")
               })
               it("It adds previous bids for pending withdrawal for losing bidder's and allow them to withdraw those", async function () {
                   // Below are also included in this test
@@ -360,7 +360,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   user = accounts[3]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
                   await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
 
@@ -404,8 +404,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
                   const abstractImpulseInstanceSecond = await abstractImpulseNFT.connect(anotherBidder)
                   await abstractImpulseNFT.mintNFT("FirstTokenURI", auctionDuration)
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
-                  await abstractImpulseInstanceSecond.placeBid(0, { value: parseEther("0.2") })
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
+                  await abstractImpulseInstanceSecond.placeBid(0, { value: parseEther("0.9") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
 
@@ -430,7 +430,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   user = accounts[3]
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
               })
               it("It is not allowed to use any of above functions for tokenId's for which bidding is still ongoing", async () => {
                   // abstractImpulseInstance ------------------------------------------------------------------------------------------------------------------
@@ -478,7 +478,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   // Below is also included in this test
                   // it("It approve's highest bidding address per tokenId to claim NFT and emit's (owner, approvedAddress, tokenId)")
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
 
@@ -625,7 +625,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   abstractImpulseInstance = await abstractImpulseNFT.connect(user)
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
 
-                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.1") })
+                  await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION + 119])
                   await network.provider.send("evm_mine", [])
 

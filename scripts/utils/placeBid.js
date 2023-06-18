@@ -10,7 +10,8 @@ async function placeBid() {
 
     console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${await abstractImpulseNFT.owner()}`)
 
-    const responseTx = await abstractImpulseNFT.placeBid(tokenId, { value: parseEther("0.11") })
+    //  MinValue Of Bid is 0.5
+    const responseTx = await abstractImpulseNFT.placeBid(tokenId, { value: parseEther("0.5") })
     const receiptTx = await responseTx.wait()
     const bidVal = receiptTx.events[1].args.amount
     const bidder = receiptTx.events[1].args.bidder
