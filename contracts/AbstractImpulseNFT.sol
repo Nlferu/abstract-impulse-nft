@@ -38,7 +38,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     // NFT Events
     event NFT_BidAccepted(uint256 indexed tokenId);
     event NFT_SetTokenURI(string uri, uint256 indexed tokenId);
-    event NFT_Minted(address indexed minter, uint256 indexed tokenId);
+    event NFT_Minted(address indexed minter, uint256 indexed price, uint256 indexed tokenId);
     event NFT_AuctionTimeUpdated(uint256 indexed time, uint256 indexed tokenId);
     event NFT_AddedPendingBidsForWithdrawal(uint256 indexed bid, address indexed bidder);
     event NFT_BidPlaced(uint256 indexed amount, address indexed bidder, uint256 indexed tokenId);
@@ -60,7 +60,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         auction.s_tokenIdToAuctionStart = block.timestamp;
         auction.s_tokenIdToAuctionDuration = auctionDuration;
 
-        emit NFT_Minted(msg.sender, newTokenId);
+        emit NFT_Minted(msg.sender, startPrice, newTokenId);
         emit NFT_SetTokenURI(auction.s_tokenIdToTokenURI, newTokenId);
         emit NFT_AuctionTimeUpdated(auctionDuration, newTokenId);
     }
@@ -79,7 +79,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
             revert Abstract__AuctionFinishedForThisNFT();
         }
 
-        // Extend the auction by 5 minutes if it's close to ending
+        // Extend the auction by 2 minutes if it's close to ending
         if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp) < 2 minutes) {
             auction.s_tokenIdToAuctionStart += 2 minutes;
             emit NFT_AuctionTimeUpdated(auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp, tokenId);
@@ -203,32 +203,5 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
             revert Abstract__AuctionStillOpenForThisNFT();
         }
         _;
-    }
-
-    /// @dev Delete below getters
-    /*
-     * Check error/events if those are used
-     * Check Ownable and ReentrancyGuard -> turn into modifier and check costs
-     */
-    function getHighestBidder(uint256 tokenId) external view returns (address) {
-        Auction storage auction = auctions[tokenId];
-        return auction.s_tokenIdToBidder;
-    }
-
-    function getHighestBid(uint256 tokenId) external view returns (uint256) {
-        Auction storage auction = auctions[tokenId];
-        return auction.s_tokenIdToBid;
-    }
-
-    function getTime(uint256 tokenId) external view returns (uint256) {
-        Auction storage auction = auctions[tokenId];
-        return
-            ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) < block.timestamp)
-                ? 0
-                : (auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp);
-    }
-
-    function getPendingReturns(address bidder) external view returns (uint256) {
-        return pendingReturns[bidder];
     }
 }

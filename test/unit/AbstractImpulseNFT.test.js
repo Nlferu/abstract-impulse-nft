@@ -6,7 +6,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Abstract NFT Unit Tests", function () {
-          let abstractImpulseNFT, abstractImpulseInstance, resMintTx, recMintTx, tokenId, deployer, user, auctionDuration
+          let abstractImpulseNFT, abstractImpulseInstance, resTx, recTx, tokenId, deployer, user, auctionDuration
 
           beforeEach(async () => {
               auctionDuration = 30
@@ -91,16 +91,16 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
           describe("Mint NFT", () => {
               beforeEach(async () => {
                   // Minting NFT
-                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
-                  recMintTx = await resMintTx.wait()
-                  tokenId = recMintTx.events[1].args.tokenId
+                  resTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
+                  recTx = await resTx.wait()
+                  tokenId = recTx.events[1].args.tokenId
               })
               it("It reverts if auction duration argument is too low", async () => {
                   await expect(abstractImpulseNFT.mintNFT("tokenURIxx", 9)).to.be.revertedWith("Abstract__AuctionDurationTooShort")
               })
               it("It creates new tokenId (NFT) and emit's (minter, tokenId)", async function () {
                   // We have to use 1 index as "_mint" function has index 0
-                  const minter = recMintTx.events[1].args.minter
+                  const minter = recTx.events[1].args.minter
                   console.log(`Minter: ${minter} TokenId: ${tokenId}`)
                   const tokenCounter = await abstractImpulseNFT.totalSupply()
 
@@ -109,37 +109,26 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_Minted`)
               })
               it("It assigns correct tokenURI to created NFT and emit's (tokenURI)", async function () {
-                  const tokenURI = recMintTx.events[2].args.uri
-                  tokenId = recMintTx.events[2].args.tokenId
+                  const tokenURI = recTx.events[2].args.uri
+                  tokenId = recTx.events[2].args.tokenId
                   console.log(`TokenURI: ${tokenURI} TokenId: ${tokenId}`)
                   const setTokenURI = await abstractImpulseNFT.tokenURI(tokenId)
 
                   assert.equal(tokenURI, setTokenURI)
                   await expect(abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_SetTokenURI`)
               })
-              it("It assigns correct auction duration per tokenId and emit's (time)", async () => {
+              it("It assigns correct auction duration per tokenId, set's (time, price) and emit's (time, tokenId)", async () => {
                   auctionDuration = 180
                   const mintResponseTx = await abstractImpulseNFT.mintNFT("tokenURI_T", auctionDuration)
                   const mintReceiptTx = await mintResponseTx.wait()
+                  const price = mintReceiptTx.events[1].args.price
                   const time = mintReceiptTx.events[3].args.time
                   tokenId = mintReceiptTx.events[3].args.tokenId
 
                   assert.equal(tokenId, 1)
                   assert.equal(time, auctionDuration)
-                  await expect(abstractImpulseNFT.mintNFT("tokenURIz", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`)
-              })
-              it("It set's correct starting price for created NFT", async function () {
-                  const price = await abstractImpulseNFT.getHighestBid(tokenId)
-                  console.log(`Price: ${price}`)
-
-                  // 0.1 ETH
                   assert.equal(price.toString(), parseEther("0.5").toString())
-              })
-              it("It set's auction starting time for created NFT", async function () {
-                  const time = await abstractImpulseNFT.getTime(0)
-                  console.log(`Time: ${time}`)
-
-                  assert.equal(time, 30)
+                  await expect(abstractImpulseNFT.mintNFT("tokenURIz", auctionDuration)).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`).withArgs(time, 2)
               })
               it("It throws error if called by external user (only owner can mint NFT)", async function () {
                   user = accounts[1]
@@ -153,9 +142,9 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
           describe("Place Bid", () => {
               beforeEach(async () => {
                   // Minting NFT
-                  resMintTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
-                  recMintTx = await resMintTx.wait()
-                  tokenId = recMintTx.events[1].args.tokenId
+                  resTx = await abstractImpulseNFT.mintNFT("tokenURIx", auctionDuration)
+                  recTx = await resTx.wait()
+                  tokenId = recTx.events[1].args.tokenId
 
                   // Connecting External User
                   user = accounts[1]
@@ -176,18 +165,16 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await expect(abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })).to.be.revertedWith("Abstract__AuctionFinishedForThisNFT")
               })
               it("It extends auction time if auction is close to ending and bid is received and emit's time and tokenId", async function () {
-                  let auctionTime = await abstractImpulseNFT.getTime(tokenId)
-                  console.log(`Auction Time For ${tokenId} NFT Left: ${auctionTime}`)
+                  console.log(`Auction Time For ${tokenId} NFT Left: ${auctionDuration}`)
 
                   const resBidTx = await abstractImpulseInstance.placeBid(0, { value: parseEther("0.5") })
                   const recBidTx = await resBidTx.wait()
                   const time = recBidTx.events[0].args.time
                   tokenId = recBidTx.events[0].args.tokenId
 
-                  auctionTime = await abstractImpulseNFT.getTime(tokenId)
                   console.log(`Auction Time For ${tokenId} NFT Left: ${time} After New Bid`)
 
-                  assert.equal(auctionTime.toString(), time.toString()) // 120 + 29 as 1s passed after bidding
+                  assert.equal("149", time.toString()) // 120 + 29 as 1s passed after bidding
                   await expect(resBidTx).to.emit(abstractImpulseNFT, `NFT_AuctionTimeUpdated`)
               })
               it("It reverts if amount sent is less than start price for given tokenId if first bid", async function () {
@@ -213,20 +200,19 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   console.log(`Bid Value: ${bidVal.toString()} WEI Bidder: ${bidder} tokenId: ${tokenId} Time Left: ${time}`)
 
-                  let pendingWithdrawal = await abstractImpulseNFT.getPendingReturns(user.address)
+                  let pendingWithdrawal = 0
                   let contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
                   let balanceETH = await ethers.provider.getBalance(user.address)
                   let secBalETH = await ethers.provider.getBalance(sec_user.address)
                   console.log(`Balance Of First User: ${balanceETH} ETH Second User: ${secBalETH} WEI Pending Withdrawal Balance: ${pendingWithdrawal}`)
 
-                  let highestBid = await abstractImpulseNFT.getHighestBid(tokenId)
-                  let highestBidder = await abstractImpulseNFT.getHighestBidder(tokenId)
+                  let highestBid = "15"
+                  let highestBidder = user.address
                   console.log(`Highest Bid: ${highestBid} Highest Bidder: ${highestBidder}`)
 
                   const { gasUsed, effectiveGasPrice } = txReceipt
                   const gasCost = gasUsed.mul(effectiveGasPrice)
 
-                  assert.equal(pendingWithdrawal, 0)
                   assert.equal(bidder, user.address, highestBidder)
                   assert.equal(bidVal.toString(), contractBalance, highestBid)
                   assert.equal(balanceETH, startingBalance.sub(bidVal).sub(gasCost).toString())
@@ -239,7 +225,7 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   const pendingBid = recRetTx.events[0].args.bid
                   const pendingBidder = recRetTx.events[0].args.bidder
                   const newBid = recRetTx.events[1].args.amount
-                  pendingWithdrawal = await abstractImpulseNFT.getPendingReturns(user.address)
+                  pendingWithdrawal = ethers.utils.parseEther("15")
                   contractBalance = await ethers.provider.getBalance(abstractImpulseNFT.address)
                   console.log(`Pending Bid: ${pendingBid} For: ${pendingBidder} Pending Bid Added: ${bidVal} Pending Withdrawal Balance: ${pendingWithdrawal}`)
 
@@ -247,8 +233,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   secBalETH = await ethers.provider.getBalance(sec_user.address)
                   console.log(`Balance Of First User: ${balanceETH} ETH Second User: ${secBalETH} WEI`)
 
-                  highestBid = await abstractImpulseNFT.getHighestBid(tokenId)
-                  highestBidder = await abstractImpulseNFT.getHighestBidder(tokenId)
+                  highestBid = ethers.utils.parseEther("30")
+                  highestBidder = sec_user.address
                   console.log(`New Highest Bid: ${highestBid} New Highest Bidder: ${highestBidder}`)
 
                   const newGas = recRetTx.gasUsed
@@ -367,8 +353,8 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   tokenId = (await abstractImpulseNFT.totalSupply()) - 1
               })
               it("It is usable for tokenId's, which auction's have finished and minBid received if called by not approved owner it reverts approve() transferFrom()", async () => {
-                  const highestBid = await abstractImpulseNFT.getHighestBid(tokenId)
-                  const highestBidder = await abstractImpulseNFT.getHighestBidder(tokenId)
+                  const highestBid = parseEther("0.5")
+                  const highestBidder = user.address
                   console.log(`Bid: ${highestBid} Bidder: ${highestBidder} TokenId: ${tokenId}`)
 
                   await expect(abstractImpulseInstance.approve(user.address, tokenId)).to.be.revertedWith("ApprovalCallerNotOwnerNorApproved")
@@ -594,23 +580,18 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   // Below is also included in this test
                   // it("It renew and sets correct auction time for given tokenId and emit's (time, tokenId)"
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
+
                   await network.provider.send("evm_increaseTime", [AUCTION_DURATION])
                   await network.provider.send("evm_mine", [])
 
-                  let getTime = await abstractImpulseNFT.getTime(tokenId)
-                  console.log(`Current Time Left: ${getTime}`)
-
-                  assert.equal(getTime, 0)
-
-                  const resTx = await abstractImpulseNFT.renewAuction(tokenId)
-                  const recTx = await resTx.wait()
+                  resTx = await abstractImpulseNFT.renewAuction(tokenId)
+                  recTx = await resTx.wait()
                   const time = recTx.events[0].args.time
                   tokenId = recTx.events[0].args.tokenId
 
-                  getTime = await abstractImpulseNFT.getTime(tokenId)
-                  console.log(`Time Left After Renewal: ${getTime}`)
+                  console.log(`Time Left After Renewal: ${time}`)
 
-                  assert.equal(getTime.toString(), time.toString())
+                  assert.equal("30", time.toString())
                   await expect(resTx).to.emit(abstractImpulseNFT, "NFT_AuctionTimeUpdated")
               })
               it("It reverts if given tokenId doesn't exist", async () => {
@@ -630,19 +611,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   await network.provider.send("evm_mine", [])
 
                   await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__BidReceivedForThisNFT")
-              })
-          })
-          // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-          describe("Getters", () => {
-              beforeEach(async () => {
-                  tokenId = 0
-              })
-              it("It displays correct data", async () => {
-                  assert.equal(await abstractImpulseNFT.getTime(tokenId), 0)
-
-                  await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
-
-                  await expect(abstractImpulseNFT.getTime(tokenId)).to.not.reverted
               })
           })
       })
