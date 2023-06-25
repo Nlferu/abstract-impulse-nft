@@ -2,11 +2,11 @@
 pragma solidity 0.8.18;
 
 import "erc721a/contracts/ERC721A.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error Abstract__NotEnoughETH();
 error Abstract__TransferFailed();
+error Abstract__NotContractOwner();
 error Abstract__FunctionDisabled();
 error Abstract__NotExistingTokenId();
 error Abstract__BidReceivedForThisNFT();
@@ -17,7 +17,7 @@ error Abstract__AuctionFinishedForThisNFT();
 error Abstract__AuctionStillOpenForThisNFT();
 error Abstract__ContractOwnerIsNotAllowedToBid();
 
-contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
+contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
     // NFT Structs
     struct Auction {
         uint256 s_tokenIdToBid;
@@ -28,6 +28,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     }
 
     // NFT Variables
+    address private immutable _owner;
     uint256 private constant minBid = 0.01 ether;
     uint256 private constant startPrice = 0.5 ether;
 
@@ -45,7 +46,9 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     event NFT_WithdrawCompleted(uint256 indexed amount, bool indexed transfer, uint256 indexed tokenId);
     event NFT_PendingBidsWithdrawal(uint256 indexed bid, address indexed bidder, bool indexed transfer);
 
-    constructor() ERC721A("Abstract Impulse", "AIN") {}
+    constructor() ERC721A("Abstract Impulse", "AIN") {
+        _owner = msg.sender;
+    }
 
     function mintNFT(string calldata externalTokenURI, uint256 auctionDuration) external onlyOwner {
         if (auctionDuration < 10) revert Abstract__AuctionDurationTooShort();
@@ -69,7 +72,7 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
     function placeBid(uint256 tokenId) external payable nonReentrant {
         Auction storage auction = auctions[tokenId];
         // Make sure the contract owner cannot bid
-        if (msg.sender == owner()) revert Abstract__ContractOwnerIsNotAllowedToBid();
+        if (msg.sender == _owner) revert Abstract__ContractOwnerIsNotAllowedToBid();
 
         // Check if NFT exists
         if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
@@ -202,6 +205,12 @@ contract AbstractImpulseNFT is ERC721A, Ownable, ReentrancyGuard {
         if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
             revert Abstract__AuctionStillOpenForThisNFT();
         }
+        _;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != _owner) revert Abstract__NotContractOwner();
+
         _;
     }
 }
