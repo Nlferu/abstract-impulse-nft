@@ -210,7 +210,6 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
 
     modifier onlyOwner() {
         if (msg.sender != i_owner) revert Abstract__NotContractOwner();
-
         _;
     }
 }
