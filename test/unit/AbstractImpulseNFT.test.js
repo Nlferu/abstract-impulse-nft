@@ -38,9 +38,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                   recTx = await resTx.wait()
                   tokenId = recTx.events[1].args.tokenId
               })
-              it("It reverts if auction duration argument is too low", async () => {
-                  await expect(abstractImpulseNFT.mintNFT("tokenURIxx", 9)).to.be.revertedWith("Abstract__AuctionDurationTooShort")
-              })
               it("It creates new tokenId (NFT) and emit's (minter, tokenId)", async function () {
                   // We have to use 1 index as "_mint" function has index 0
                   const minter = recTx.events[1].args.minter
@@ -436,9 +433,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
                       "Transfer"
                   )
               })
-              it("It reverts if given tokenId doesn't exist", async () => {
-                  await expect(abstractImpulseNFT.acceptBid(tokenId)).to.be.revertedWith("Abstract__NotExistingTokenId")
-              })
               it("It reverts if auction not finished for given tokenId", async () => {
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)
                   await expect(abstractImpulseNFT.acceptBid(tokenId)).to.be.revertedWith("Abstract__AuctionStillOpenForThisNFT")
@@ -536,9 +530,6 @@ const { developmentChains, AUCTION_DURATION } = require("../../helper-hardhat-co
 
                   assert.equal("30", time.toString())
                   await expect(resTx).to.emit(abstractImpulseNFT, "NFT_AuctionTimeUpdated")
-              })
-              it("It reverts if given tokenId doesn't exist", async () => {
-                  await expect(abstractImpulseNFT.renewAuction(tokenId)).to.be.revertedWith("Abstract__NotExistingTokenId")
               })
               it("It reverts if auction not finished for given tokenId", async () => {
                   await abstractImpulseNFT.mintNFT("TokenURI_X", auctionDuration)

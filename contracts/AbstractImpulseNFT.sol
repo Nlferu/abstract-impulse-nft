@@ -10,7 +10,6 @@ error Abstract__NotContractOwner();
 error Abstract__FunctionDisabled();
 error Abstract__NotExistingTokenId();
 error Abstract__BidReceivedForThisNFT();
-error Abstract__AuctionDurationTooShort();
 error Abstract__NoBidReceivedForThisNFT();
 error Abstract__AddressIsNotHighestBidder();
 error Abstract__AuctionFinishedForThisNFT();
@@ -51,8 +50,6 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
     }
 
     function mintNFT(string calldata externalTokenURI, uint256 auctionDuration) external onlyOwner {
-        if (auctionDuration < 10) revert Abstract__AuctionDurationTooShort();
-
         uint256 newTokenId = totalSupply();
         Auction storage auction = auctions[newTokenId];
 
@@ -113,29 +110,41 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
         return auction.s_tokenIdToTokenURI;
     }
 
-    function approve(address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+    function approve(address to, uint256 tokenId) public payable override {
         Auction storage auction = auctions[tokenId];
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (to != auction.s_tokenIdToBidder) revert Abstract__AddressIsNotHighestBidder();
 
         super.approve(to, tokenId);
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+    function transferFrom(address from, address to, uint256 tokenId) public payable override {
         Auction storage auction = auctions[tokenId];
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (to != auction.s_tokenIdToBidder) revert Abstract__AddressIsNotHighestBidder();
 
         super.transferFrom(from, to, tokenId);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId) public payable override biddingStateCheck(tokenId) {
+    function safeTransferFrom(address from, address to, uint256 tokenId) public payable override {
         Auction storage auction = auctions[tokenId];
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (to != auction.s_tokenIdToBidder) revert Abstract__AddressIsNotHighestBidder();
 
         super.safeTransferFrom(from, to, tokenId);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public payable override biddingStateCheck(tokenId) {
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public payable override {
         Auction storage auction = auctions[tokenId];
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (to != auction.s_tokenIdToBidder) revert Abstract__AddressIsNotHighestBidder();
 
         super.safeTransferFrom(from, to, tokenId, _data);
@@ -149,9 +158,11 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
     /**
      * @dev This will occur once timer end or if owner decide to accept bid, so js script has to trigger it, but there is onlyOwner approval needed
      */
-    function acceptBid(uint256 tokenId) external onlyOwner biddingStateCheck(tokenId) {
+    function acceptBid(uint256 tokenId) external onlyOwner {
         Auction storage auction = auctions[tokenId];
-        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (auction.s_tokenIdToBidder == address(0)) revert Abstract__NoBidReceivedForThisNFT();
 
         withdrawMoney(tokenId);
@@ -179,7 +190,7 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
 
     /**
      * @dev We are able to withdraw money from contract only for closed biddings
-     * If we leave it as "private" we should remove all "if" and modifiers as acceptBid is checking those
+     * `acceptBid()` function is already checking all conditions
      */
     function withdrawMoney(uint256 tokenId) private onlyOwner {
         Auction storage auction = auctions[tokenId];
@@ -190,22 +201,16 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
         emit NFT_WithdrawCompleted(auction.s_tokenIdToBid, success, tokenId);
     }
 
-    function renewAuction(uint256 tokenId) external onlyOwner biddingStateCheck(tokenId) {
+    function renewAuction(uint256 tokenId) external onlyOwner {
         Auction storage auction = auctions[tokenId];
-        if (!_exists(tokenId)) revert Abstract__NotExistingTokenId();
+        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
+            revert Abstract__AuctionStillOpenForThisNFT();
+        }
         if (auction.s_tokenIdToBidder != address(0)) revert Abstract__BidReceivedForThisNFT();
 
         auction.s_tokenIdToAuctionStart = block.timestamp;
 
         emit NFT_AuctionTimeUpdated((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp), tokenId);
-    }
-
-    modifier biddingStateCheck(uint256 tokenId) {
-        Auction storage auction = auctions[tokenId];
-        if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration) > block.timestamp) {
-            revert Abstract__AuctionStillOpenForThisNFT();
-        }
-        _;
     }
 
     modifier onlyOwner() {
