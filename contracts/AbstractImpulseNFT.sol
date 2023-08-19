@@ -32,8 +32,8 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
     uint256 private constant START_PRICE = 0.5 ether;
 
     // NFT Mappings
-    mapping(uint256 => Auction) private auctions;
-    mapping(address => uint256) private pendingReturns;
+    mapping(uint256 tokenId => Auction map) private auctions;
+    mapping(address user => uint256 amount) private pendingReturns;
 
     // NFT Events
     event NFT_BidAccepted(uint256 indexed tokenId);
