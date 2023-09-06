@@ -80,7 +80,10 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
 
         // Extend the auction by 2 minutes if it's close to ending
         if ((auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp) < 2 minutes) {
-            auction.s_tokenIdToAuctionStart += 2 minutes;
+            /** @dev This allows us saving a lot of gas */
+            unchecked {
+                auction.s_tokenIdToAuctionStart += 2 minutes;
+            }
             emit NFT_AuctionTimeUpdated(auction.s_tokenIdToAuctionStart + auction.s_tokenIdToAuctionDuration - block.timestamp, tokenId);
         }
 
@@ -94,7 +97,10 @@ contract AbstractImpulseNFT is ERC721A, ReentrancyGuard {
             // Check if the bid amount is high enough
             if (msg.value < (auction.s_tokenIdToBid + MIN_BID)) revert Abstract__NotEnoughETH();
 
-            pendingReturns[auction.s_tokenIdToBidder] += auction.s_tokenIdToBid;
+            /** @dev This allows us saving a lot of gas */
+            unchecked {
+                pendingReturns[auction.s_tokenIdToBidder] += auction.s_tokenIdToBid;
+            }
             emit NFT_AddedPendingBidsForWithdrawal(pendingReturns[auction.s_tokenIdToBidder], auction.s_tokenIdToBidder);
         }
 
