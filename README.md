@@ -24,15 +24,15 @@ In conclusion, we present Abstract Impulse NFT, a project born from inspiration,
 
 # Built With
 
-chainlink
-css
-erc721a
-graph
-hardhat
-javascript
-moralis
-react
-nextjs
-remix
-solidity
-vercel
+Chainlink
+CSS
+ERC721a
+Graph
+Hardhat
+JavaScript
+Moralis
+React
+NextJS
+Remix
+Solidity
+Vercel
