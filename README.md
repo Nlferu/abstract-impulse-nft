@@ -18,7 +18,7 @@ Every project faces challenges, and ours was no exception. Time constraints turn
 
 # Lessons Learned and Future Plans
 
-The Chainlink Hackathon 2022 was more than a competition; it was a comprehensive learning experience that provided us with an in-depth understanding of blockchain-related languages, appliances, and overall project workflow. As we look ahead, winning the Chainlink Hackathon Spring 2023 would be a testament to our dedicated efforts. We aspire to publicize our solution to private artists in search of a low-cost, tailor-made interface for listing NFT auctions. Our next step is to streamline the auction setup process by reducing dependencies on external resources, further enhancing user experience.
+This was more than a competition, it was a comprehensive learning experience that provided us with an in-depth understanding of blockchain-related languages, appliances, and overall project workflow. As we look ahead, winning the Chainlink Hackathon Spring 2023 would be a testament to our dedicated efforts. We aspire to publicize our solution to private artists in search of a low-cost, tailor-made interface for listing NFT auctions. Our next step is to streamline the auction setup process by reducing dependencies on external resources, further enhancing user experience.
 
 In conclusion, we present Abstract Impulse NFT, a project born from inspiration, built with innovation, and dedicated to serving artists and their fans in the world of NFT auctions. We are just getting started, and the journey ahead is even more exciting!
 
