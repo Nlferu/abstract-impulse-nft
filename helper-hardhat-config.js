@@ -14,7 +14,10 @@ const networkConfig = {
 }
 
 // Goerli
-const motherContract = "0x9cfefaFA8877363623B83210b90F707Bf67E2eD2"
+const motherContractGoerli = "0x9cfefaFA8877363623B83210b90F707Bf67E2eD2"
+
+// Sepolia
+const motherContract = "0xc03dFB2E43c8dE85a0903ace6aF3dE63433bc1F5"
 
 const developmentChains = ["hardhat", "localhost"]
 const DECIMALS = "18"
