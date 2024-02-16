@@ -1,8 +1,6 @@
-const { ethers } = require("hardhat")
-const { developmentChains, motherContract } = require("../helper-hardhat-config")
-const frontEndContractsFile = "../Abstract_Impulse_NFT_Front/constants/networkMapping.json"
-const frontEndAbiLocation = "../Abstract_Impulse_NFT_Front/constants/"
 const fs = require("fs")
+const { ethers } = require("hardhat")
+const { developmentChains, frontEndContractsFile, frontEndAbiLocation } = require("../helper-hardhat-config")
 
 async function updateFrontEnd() {
     if (process.env.UPDATE_FRONT_END) {
@@ -18,9 +16,10 @@ async function updateAbi() {
 }
 
 async function updateContractAddresses() {
-    const abstractImpulseNft = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
     const chainId = network.config.chainId.toString()
+    const abstractImpulseNft = await ethers.getContract("AbstractImpulseNFT")
     const contractAddresses = JSON.parse(fs.readFileSync(frontEndContractsFile, "utf8"))
+
     if (chainId in contractAddresses) {
         if (!contractAddresses[chainId]["AbstractImpulseNFT"].includes(abstractImpulseNft.address)) {
             contractAddresses[chainId]["AbstractImpulseNFT"].push(abstractImpulseNft.address)
