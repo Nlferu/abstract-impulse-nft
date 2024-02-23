@@ -1,12 +1,12 @@
 const { ethers, network } = require("hardhat")
-const { developmentChains, motherContract } = require("../../helper-hardhat-config")
+const { developmentChains } = require("../../helper-hardhat-config")
 const { parseEther } = require("ethers/lib/utils")
 const prompt = require("prompt-sync")()
 
 let tokenId = prompt("TokenId: ")
 
 async function placeBid() {
-    const abstractImpulseNFT = await ethers.getContractAt("AbstractImpulseNFT", motherContract)
+    const abstractImpulseNFT = await ethers.getContract("AbstractImpulseNFT")
 
     console.log(`Working With AbstractImpulseNFT Contract: ${abstractImpulseNFT.address} Owner: ${await abstractImpulseNFT.owner()}`)
 
