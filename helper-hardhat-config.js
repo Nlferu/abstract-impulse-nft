@@ -34,5 +34,4 @@ module.exports = {
     frontEndAbiLocation,
     uploadedImagesURIs,
     uploadedMetadataURIs,
-    motherContract,
 }
